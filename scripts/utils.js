@@ -32,14 +32,14 @@ export function loadJsonSafe(filePath, defaultValue = []) {
   }
 }
 const rankCategoryEmotes = {
-  A: '<:RankA:1412694937203511336>',
-  B: '<:RankB:1412694961358372894>',
-  C: '<:RankC:1412694982363578450>',
-  D: '<:RankD:1412695001825284198>',
-  E: '<:RankE:1412695032137257040>',
-  F: '<:RankF:1412695050969681982>',
-  G: '<:RankG:1412695075271475212>',
-  S: '<:RankS:1412695122784551033>',
+  A: '<:RankA:1518341032360808539>',
+  B: '<:RankB:1518357251600027810>',
+  C: '<:RankC:1518357287712981175>',
+  D: '<:RankD:1518357318478074046>',
+  E: '<:RankE:1518357344583418018>',
+  F: '<:RankF:1518357376728830135>',
+  G: '<:RankG:1518357406369841284>',
+  S: '<:RankS:1518357431762157779>',
   default: '❓' // fallback
 };
 
@@ -166,31 +166,31 @@ function getCardTypeImageLink(str) {
 export function getCustomEmoji(str) {
   if (str === 'speed')
   {
-    return { "id": "1409344810426564750", "name": "Speed" };
+    return { "id": "1518358433181602033", "name": "Speed" };
   }
   else if (str === 'stamina')
   {
-    return { "id": "1409340937137684551", "name": "Stamina" };
+    return { "id": "1518358485203554516", "name": "Stamina" };
   }
   else if (str === 'power')
   {
-    return { "id": "1409344836322070578", "name": "Power" };
+    return { "id": "1518358525896560690", "name": "Power" };
   }
   else if (str === 'wit')
   {
-    return { "id": "1409344858698551367", "name": "Wit" };
+    return { "id": "1518358576035528784", "name": "Wit" };
   }
   else if (str === 'guts')
   {
-    return { "id": "1409344879930249216", "name": "Guts" };
+    return { "id": "1518358605978533989", "name": "Guts" };
   }
   else if (str === 'friend')
   {
-    return { "id": "1409344903833452604", "name": "Friend" };
+    return { "id": "1518358650094223471", "name": "Friend" };
   }
   else if (str === 'group')
   {
-    return { "id": "1409344925103030315", "name": "Group" };
+    return { "id": "1518358679001497642", "name": "Group" };
   }
 }
 
