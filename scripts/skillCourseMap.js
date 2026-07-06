@@ -9,6 +9,15 @@ function toMeters(distanceValue) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function inferDistanceTypeFromMeters(distanceValue) {
+  const meters = toMeters(distanceValue);
+  if (!meters || meters <= 0) return null;
+  if (meters <= 1400) return "Sprint";
+  if (meters <= 1800) return "Mile";
+  if (meters <= 2400) return "Medium";
+  return "Long";
+}
+
 function extractUnixTimestamp(value) {
   const match = String(value ?? "").match(/<t:(\d+):/);
   if (!match) return null;
@@ -249,7 +258,7 @@ function resolveCustomRaceMapSource(race, mapsCatalog = []) {
   return null;
 }
 
-function buildMapContextFromRawMap(rawMap, label = null) {
+function buildMapContextFromRawMap(rawMap, label = null, trackOverlay = null) {
   return {
     name: label ?? rawMap?.name ?? "Course",
     track: {
@@ -257,10 +266,11 @@ function buildMapContextFromRawMap(rawMap, label = null) {
       direction: rawMap?.direction,
       terrain: rawMap?.terrain,
       distance_meters: rawMap?.distance_meters,
-      distance_type: rawMap?.distance_type,
+      distance_type: rawMap?.distance_type ?? inferDistanceTypeFromMeters(rawMap?.distance_meters),
       ground: rawMap?.ground,
       season: rawMap?.season,
       weather: rawMap?.weather,
+      ...(trackOverlay ?? {}),
     },
   };
 }
@@ -285,7 +295,7 @@ export function resolveMapOverride(rawValue, mapsCatalog = [], customRacesCatalo
       key: `custom:${race.id ?? slugifyMapKey(race.name)}`,
       label: race.name ?? rawMap.name ?? "Custom Race",
       rawMap,
-      context: buildMapContextFromRawMap(rawMap, race.name),
+      context: buildMapContextFromRawMap(rawMap, race.name, race.track),
       customRace: race,
     };
   }
@@ -362,7 +372,7 @@ function toCatalogEntryFromCustomRace(race, mapsCatalog = []) {
     key: `custom:${race.id ?? slugifyMapKey(race.name)}`,
     label: race.name ?? rawMap.name ?? "Custom Race",
     rawMap,
-    context: buildMapContextFromRawMap(rawMap, race.name),
+    context: buildMapContextFromRawMap(rawMap, race.name, race.track),
     customRace: race,
   };
 }
@@ -428,6 +438,19 @@ export function getSelectableChampionsMeets(champsmeets, { fromCmNumber = 0, max
 
 function lower(value) {
   return String(value ?? "").toLowerCase();
+}
+
+function isLayoutCornerSegment(segment) {
+  return lower(segment?.label).includes("corner");
+}
+
+function layoutSegmentMatches(segment, match) {
+  const normalizedMatch = lower(match);
+  if (!normalizedMatch) return true;
+  if (normalizedMatch === "not_a_corner" || normalizedMatch === "not_corner" || normalizedMatch === "not corner") {
+    return !isLayoutCornerSegment(segment);
+  }
+  return lower(segment?.label).includes(normalizedMatch);
 }
 
 function collectSkillConditionText(skill, includeDescriptions = false) {
@@ -516,14 +539,21 @@ function inferPhaseWindowFromTexts(texts, mapData) {
   const cornerSegments = (mapData.layout ?? []).filter((segment) => lower(segment.label).includes("corner"));
   const finalCorner = cornerSegments.length ? cornerSegments[cornerSegments.length - 1] : null;
 
+  // "Final corner and beyond" + "Late race and beyond" => intersection of both windows.
+  const hasFinalCornerBeyond = texts.some((t) => t.includes("final corner and beyond"));
+  const hasLateAndBeyond = texts.some((t) => t.includes("late race and beyond"));
+  if (hasFinalCornerBeyond && hasLateAndBeyond) {
+    return resolvePhaseClipFromSpec(mapData, ["final_corner_and_beyond", "late_and_beyond"]);
+  }
+
   // "Final corner and beyond" means from start of last corner to race end.
-  if (texts.some((t) => t.includes("final corner and beyond"))) {
+  if (hasFinalCornerBeyond) {
     const start = finalCorner?.start ?? (lateZone?.start ?? mapData.length * 0.75);
     return { start, end: mapData.length, forceFullRange: true };
   }
 
   // "Late race and beyond" means from late-race start to race end.
-  if (texts.some((t) => t.includes("late race and beyond"))) {
+  if (hasLateAndBeyond) {
     const start = lateZone?.start ?? spurtZone?.start ?? mapData.length * 0.75;
     return { start, end: mapData.length };
   }
@@ -584,10 +614,11 @@ function inferMarkersFromConditionSet(conditionTexts, mapData) {
   const mentionsCorner = texts.some((t) => t.includes("corner"));
   const mentionsFinalCorner = texts.some((t) => t.includes("final corner"));
   const mentionsNotFinalCorner = texts.some((t) => t.includes("not final corner"));
+  const mentionsNotACorner = texts.some((t) => t.includes("not a corner"));
   const mentionsStraight = texts.some((t) => t.includes("straight"));
   const mentionsFinalStraight = texts.some((t) => t.includes("final straight"));
 
-  if (phaseWindow?.forceFullRange && (mentionsCorner || mentionsStraight)) {
+  if (phaseWindow?.forceFullRange && (mentionsCorner || mentionsStraight || mentionsNotACorner)) {
     addClippedBox(clipStart, clipEnd);
   } else {
     if (mentionsCorner) {
@@ -601,7 +632,10 @@ function inferMarkersFromConditionSet(conditionTexts, mapData) {
       for (const segment of selected) addClippedBox(segment.start, segment.end);
     }
 
-    if (mentionsStraight) {
+    if (mentionsNotACorner) {
+      const notCornerSegments = (mapData.layout ?? []).filter((s) => !isLayoutCornerSegment(s));
+      for (const segment of notCornerSegments) addClippedBox(segment.start, segment.end);
+    } else if (mentionsStraight) {
       const selected = mentionsFinalStraight ? (finalStraight ? [finalStraight] : []) : straightSegments;
       for (const segment of selected) addClippedBox(segment.start, segment.end);
     }
@@ -693,6 +727,29 @@ function phaseWindowFromName(mapData, phaseName) {
   return null;
 }
 
+// Intersects one or more named phase windows (AND). Accepts a string or array of phase keys.
+function resolvePhaseClipFromSpec(mapData, phaseSpec) {
+  const names = Array.isArray(phaseSpec)
+    ? phaseSpec
+    : phaseSpec
+      ? [phaseSpec]
+      : [];
+  if (!names.length) return null;
+
+  let start = 0;
+  let end = mapData.length;
+  let matched = false;
+  for (const name of names) {
+    const window = phaseWindowFromName(mapData, name);
+    if (!window) continue;
+    matched = true;
+    start = Math.max(start, window.start);
+    end = Math.min(end, window.end);
+  }
+  if (!matched || end <= start) return null;
+  return { start, end };
+}
+
 function requirementsFromActivationMap(activationMap) {
   const req = activationMap?.requirements;
   if (!req) return null;
@@ -711,7 +768,7 @@ function evaluateTrackCompatibility(cmTrack, requirements) {
   if (!requirements) return { doesNotWork: false, reasons: [] };
 
   const track = {
-    distanceType: lower(cmTrack?.distance_type),
+    distanceType: lower(cmTrack?.distance_type ?? inferDistanceTypeFromMeters(cmTrack?.distance_meters)),
     terrain: lower(cmTrack?.terrain),
     direction: normalizeDirection(cmTrack?.direction),
     racetrack: lower(cmTrack?.racetrack),
@@ -767,10 +824,7 @@ function markersFromActivationMap(skill, mapData, options = {}) {
       const linePosition = lower(trigger.line_position ?? trigger.position ?? "start");
       if (target === "layout" || target === "elevation" || target === "zones") {
         const source = target === "elevation" ? mapData.elevation : target === "zones" ? mapData.zones : mapData.layout;
-        const matching = source.filter((segment) => {
-          if (!match) return true;
-          return lower(segment.label).includes(match);
-        });
+        const matching = source.filter((segment) => layoutSegmentMatches(segment, match));
         const selected =
           selectMode === "last"
             ? (matching.length ? [matching[matching.length - 1]] : [])
@@ -820,12 +874,12 @@ function markersFromActivationMap(skill, mapData, options = {}) {
       if (Number.isFinite(remainingLte)) {
         clipStart = Math.max(clipStart, mapData.length - remainingLte);
       }
-      const explicitPhaseWindow = phaseWindowFromName(mapData, trigger.phase);
+      const explicitPhaseWindow = resolvePhaseClipFromSpec(mapData, trigger.phases ?? trigger.phase);
       if (explicitPhaseWindow) {
         clipStart = Math.max(clipStart, explicitPhaseWindow.start);
         clipEnd = Math.min(clipEnd, explicitPhaseWindow.end);
       }
-      const hasExplicitPhase = Boolean(trigger.phase);
+      const hasExplicitPhase = Boolean(trigger.phases ?? trigger.phase);
       const useAutoPhaseClip = !hasExplicitPhase && trigger.disable_auto_phase_clip !== true && trigger.apply_auto_phase_clip !== false;
       if (autoPhaseWindow && useAutoPhaseClip) {
         clipStart = Math.max(clipStart, autoPhaseWindow.start);
@@ -886,7 +940,7 @@ function markersFromActivationMap(skill, mapData, options = {}) {
         const label = lower(segment.label);
         let ok = false;
 
-        if (match && label.includes(match)) ok = true;
+        if (match) ok = layoutSegmentMatches(segment, match);
         if (!ok && labels.length && labels.some((v) => label.includes(v))) ok = true;
         if (!ok && cornerNumbers.length && cornerNumbers.some((n) => label.includes(`corner ${n}`))) ok = true;
         if (!ok && !match && !labels.length && !cornerNumbers.length) ok = true;
@@ -919,6 +973,30 @@ function markersFromActivationMap(skill, mapData, options = {}) {
       const hasExplicitSelection = Boolean(
         match || labels.length || cornerNumbers.length || selectMode || excludeSelectMode || requireTags.length
       );
+
+      // Phase-only triggers paint one continuous window instead of splitting per segment.
+      // Local clip ratios apply within that phase window, not each layout segment.
+      if (
+        hasExplicitPhase &&
+        !hasExplicitSelection &&
+        !Number.isFinite(ratioStart) &&
+        !Number.isFinite(ratioEnd) &&
+        trigger.target == null
+      ) {
+        if (applyLocalClip) {
+          const phaseLength = clipEnd - clipStart;
+          const localStart = Number.isFinite(localStartRatio)
+            ? clipStart + Math.max(0, localStartRatio) * phaseLength
+            : clipStart;
+          const localEnd = Number.isFinite(localEndRatio)
+            ? clipStart + Math.min(1, localEndRatio) * phaseLength
+            : clipEnd;
+          pushClippedBox(localStart, localEnd);
+        } else {
+          pushClippedBox(clipStart, clipEnd);
+        }
+        continue;
+      }
 
       if (autoPhaseWindow?.forceFullRange && filteredSegments.length > 0 && useAutoPhaseClip && !hasExplicitSelection) {
         pushUniqueBox(markers, clipStart, clipEnd, color, triggerBehavior);
@@ -1027,12 +1105,13 @@ export function resolveSkillActivationOverlay(skill, cm, mapData) {
   };
 }
 
-export function buildSkillMapCacheKey({ cmNumber, mapContextKey, skillId, mapData, markers, rendererVersion }) {
+export function buildSkillMapCacheKey({ cmNumber, mapContextKey, skillId, mapData, markers, rendererVersion, doesNotWork }) {
   const payload = {
     cm: String(cmNumber ?? ""),
     mapContext: String(mapContextKey ?? ""),
     skill: String(skillId ?? ""),
     rendererVersion: String(rendererVersion ?? ""),
+    doesNotWork: Boolean(doesNotWork),
     map: mapData,
     markers,
   };
