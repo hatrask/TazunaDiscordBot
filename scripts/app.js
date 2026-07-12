@@ -25,10 +25,11 @@ import {
   getCourseMapDataFromCm,
   getCourseMapDataFromMap,
   resolveMapOverride,
-  resolveMapSource,
-  buildMapOverrideAutocompleteChoices,
+  resolveMapOverrideSelection,
   resolveMapCatalogMatches,
   buildMapCatalogAutocompleteChoices,
+  resolveMapSource,
+  buildMapOverrideAutocompleteChoices,
   resolveSkillActivationOverlay,
   buildSkillMapCacheKey,
   ensureDirectory,
@@ -93,7 +94,7 @@ const MAP_RENDERER_CACHE_VERSION = 'v3';
 // Adjust SKILL_MAP_MAX_CM_NUMBER (or the env var) to decide the highest CM shown.
 // The effective lower bound is dynamic: max(configured minimum, current upcoming CM).
 const SKILL_MAP_MIN_CM_NUMBER = Number(process.env.SKILL_MAP_MIN_CM_NUMBER ?? 16);
-const SKILL_MAP_MAX_CM_NUMBER = Number(process.env.SKILL_MAP_MAX_CM_NUMBER ?? 16);
+const SKILL_MAP_MAX_CM_NUMBER = Number(process.env.SKILL_MAP_MAX_CM_NUMBER ?? 17);
 
 const characters = cache.characters;
 const supporters = cache.supporters;
@@ -163,6 +164,70 @@ function buildSkillCmDropdownRow(skill, selectableCms, selectedCmNumber) {
   };
 }
 
+function buildSkillMapOverrideDropdownRow(skill, mapMatches, selectedKey, mapOverrideQuery) {
+  if (!Array.isArray(mapMatches) || mapMatches.length < 2 || !selectedKey) return null;
+
+  const identifier = skill.gametora_id ?? skill.skill_name;
+  const querySuffix = mapOverrideQuery ? `|${mapOverrideQuery}` : '';
+  const options = mapMatches.slice(0, 25).map((entry) => {
+    const track = entry.context?.track ?? {};
+    const subtitle = [track.racetrack, track.distance_meters, track.terrain, track.distance_type]
+      .filter(Boolean)
+      .join(' - ');
+    return {
+      label: entry.label.slice(0, 100),
+      value: `${entry.key}|${identifier}${querySuffix}`.slice(0, 100),
+      description: subtitle ? subtitle.slice(0, 100) : undefined,
+      default: entry.key === selectedKey,
+    };
+  });
+
+  return {
+    type: 1,
+    components: [
+      {
+        type: 3,
+        custom_id: 'skill_map_override_select',
+        placeholder: 'Select a course map',
+        options,
+      },
+    ],
+  };
+}
+
+function parseSkillMapOverrideSelectValue(rawValue) {
+  const parts = String(rawValue ?? '').split('|');
+  if (parts.length < 2) return null;
+  return {
+    mapKey: parts[0],
+    identifier: parts[1],
+    mapOverrideQuery: parts.slice(2).join('|') || null,
+  };
+}
+
+function attachSkillMapDropdowns(result, skill, {
+  override,
+  mapOverrideCandidates,
+  mapOverrideQuery,
+  chartCapable = true,
+}) {
+  if (mapOverrideCandidates.length >= 2 && override) {
+    const dropdownRow = buildSkillMapOverrideDropdownRow(
+      skill,
+      mapOverrideCandidates,
+      override.key,
+      mapOverrideQuery
+    );
+    if (dropdownRow) result.mapComponents.push(dropdownRow);
+    return;
+  }
+
+  if (!override && chartCapable && result._selectableCms && result._activeCm) {
+    const dropdownRow = buildSkillCmDropdownRow(skill, result._selectableCms, result._activeCm.number);
+    if (dropdownRow) result.mapComponents.push(dropdownRow);
+  }
+}
+
 // Inserts map selector rows before the skill button row (upgrade/downgrade/
 // visualizer links), while keeping other dropdown rows above them.
 function composeSkillComponents(baseComponents, mapComponents) {
@@ -227,7 +292,8 @@ function formatScheduleOptionRange(event) {
   return `${startLabel} - ${endLabel}`;
 }
 
-function buildScheduleSelectRow(events, selectedId, placeholder) {
+function buildScheduleSelectRow(events, selectedId) {
+  if (!events.length) return [];
   return [
     {
       type: 1,
@@ -235,7 +301,7 @@ function buildScheduleSelectRow(events, selectedId, placeholder) {
         {
           type: 3,
           custom_id: 'schedule_select',
-          placeholder: placeholder || 'Select another event',
+          placeholder: 'Check other events',
           options: events.slice(0, 25).map((event) => ({
             label: event.title.length > 100 ? `${event.title.slice(0, 97)}...` : event.title,
             value: event.id,
@@ -248,34 +314,131 @@ function buildScheduleSelectRow(events, selectedId, placeholder) {
   ];
 }
 
-function buildScheduleEmbed(event, monthLabel, generatedAt) {
+function findSupporterByPickupId(pickupId) {
+  return supporters.find((card) => card.id.startsWith(`${pickupId} `)) || null;
+}
+
+function findCharacterByPickupId(pickupId) {
+  return characters.find((card) =>
+    card.id.startsWith(`${pickupId} -`) || card.id.startsWith(`${pickupId} `)
+  ) || null;
+}
+
+function buildSchedulePickupRow(event) {
+  if (event.source === 'support' && event.pickupCardIds?.length) {
+    const options = event.pickupCardIds.map((pickupId) => {
+      const card = findSupporterByPickupId(pickupId);
+      const label = card
+        ? `${card.character_name} - ${card.card_name}`
+        : `Support #${pickupId}`;
+      return {
+        label: label.length > 100 ? `${label.slice(0, 97)}...` : label,
+        value: `${event.id}::support::${pickupId}`,
+        description: card?.rarity ? card.rarity.toUpperCase() : undefined,
+      };
+    });
+    if (!options.length) return null;
+    return {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: 'schedule_pickup_select',
+          placeholder: 'View pickup support cards',
+          options: options.slice(0, 25),
+        },
+      ],
+    };
+  }
+
+  if (event.source === 'character' && event.pickupCardIds?.length) {
+    const options = event.pickupCardIds.map((pickupId) => {
+      const card = findCharacterByPickupId(pickupId);
+      const label = card
+        ? `${card.character_name} (${card.type})`
+        : `Uma #${pickupId}`;
+      return {
+        label: label.length > 100 ? `${label.slice(0, 97)}...` : label,
+        value: `${event.id}::character::${pickupId}`,
+        description: card?.costume ? card.costume.slice(0, 100) : undefined,
+      };
+    });
+    if (!options.length) return null;
+    return {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: 'schedule_pickup_select',
+          placeholder: 'View pickup characters',
+          options: options.slice(0, 25),
+        },
+      ],
+    };
+  }
+
+  return null;
+}
+
+function buildScheduleComponents(event, activeEvents) {
+  const rows = buildScheduleSelectRow(activeEvents, event.id);
+  const pickupRow = buildSchedulePickupRow(event);
+  if (pickupRow) rows.push(pickupRow);
+  return rows;
+}
+
+function formatChampionsDescription(description) {
+  return String(description || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .trim();
+}
+
+function buildScheduleEmbed(event) {
   const typeMeta = getScheduleTypeMeta(event.type);
   const startRelative = toDiscordTimestamp(event.startAt);
-  const footerParts = [`${monthLabel} schedule`, 'Dates are estimated'];
-  if (generatedAt) {
-    const generatedTs = toDiscordTimestamp(generatedAt);
-    if (generatedTs) footerParts.push(`Snapshot <t:${generatedTs}:R>`);
+  const descriptionLines = [
+    `**Type:** ${typeMeta.label}`,
+    `**Window:** ${formatScheduleDateLine(event)}`,
+    startRelative ? `**Starts:** <t:${startRelative}:R>` : '',
+  ];
+
+  if (event.source === 'champions' && event.description) {
+    descriptionLines.push('', formatChampionsDescription(event.description));
   }
 
   const embed = {
     title: event.title,
     color: typeMeta.color,
-    description: [
-      `**Type:** ${typeMeta.label}`,
-      `**Window:** ${formatScheduleDateLine(event)}`,
-      startRelative ? `**Starts:** <t:${startRelative}:R>` : '',
-      `**Status:** ${event.isConfirmed ? 'Confirmed' : 'Estimated'}`,
-      '',
-      '⚠️ Timeline dates are predictions and can change.',
-    ].filter(Boolean).join('\n'),
-    footer: { text: footerParts.join(' • ') },
+    description: descriptionLines.filter(Boolean).join('\n'),
+    footer: { text: '⚠️ Timeline dates are predictions and can change.' },
   };
+
+  if (event.gametoraUrl) {
+    embed.url = event.gametoraUrl;
+  }
 
   if (event.imageUrl) {
     embed.image = { url: event.imageUrl };
   }
 
   return embed;
+}
+
+function buildScheduleMessageData(view, options = {}) {
+  const selected = options.selected || view.selected;
+  const extraEmbeds = options.extraEmbeds || [];
+  return {
+    content: options.content ?? `📅 ${view.monthLabel} schedule`,
+    embeds: [buildScheduleEmbed(selected), ...extraEmbeds],
+    components: buildScheduleComponents(selected, view.activeMonthEvents),
+  };
+}
+
+function parseSchedulePickupValue(rawValue) {
+  const [eventId, kind, pickupIdRaw] = String(rawValue || '').split('::');
+  const pickupId = Number(pickupIdRaw);
+  if (!eventId || !kind || !Number.isFinite(pickupId)) return null;
+  return { eventId, kind, pickupId };
 }
 
 function normalizeSkillMapOptions(options) {
@@ -292,13 +455,30 @@ function skillMapFilePrefix(mapContextKey) {
 // Champions Meet selector row. selectedCmNumber forces a specific CM map.
 // mapOverride resolves a catalog/custom-race map instead of the CM default.
 async function buildSkillEmbedWithMap(skill, supporterList, req, options = {}) {
-  const { selectedCmNumber = null, mapOverride = null } = normalizeSkillMapOptions(options);
+  const {
+    selectedCmNumber = null,
+    mapOverride = null,
+    mapOverrideQuery = null,
+  } = normalizeSkillMapOptions(options);
   const embed = buildSkillEmbed(skill, supporterList);
   const result = { embed, mapComponents: [], mapOverrideKey: null, mapCid: null };
 
-  const override = mapOverride
-    ? resolveMapOverride(mapOverride, cache.maps, cache.customraces)
-    : null;
+  let override = null;
+  let mapOverrideCandidates = [];
+  let activeMapOverrideQuery = mapOverrideQuery;
+
+  if (mapOverride) {
+    if (mapOverrideQuery) {
+      override = resolveMapOverride(mapOverride, cache.maps, cache.customraces);
+      mapOverrideCandidates = resolveMapCatalogMatches(mapOverrideQuery, cache.maps, cache.customraces);
+      if (mapOverrideCandidates.length < 2) mapOverrideCandidates = [];
+    } else {
+      const selection = resolveMapOverrideSelection(mapOverride, cache.maps, cache.customraces);
+      override = selection.entry;
+      mapOverrideCandidates = selection.candidates;
+      activeMapOverrideQuery = selection.query;
+    }
+  }
   if (override) result.mapOverrideKey = override.key;
   let mapData = null;
   let overlayCm = null;
@@ -353,10 +533,12 @@ async function buildSkillEmbedWithMap(skill, supporterList, req, options = {}) {
     (Array.isArray(skill.activation_map?.triggers) && skill.activation_map.triggers.length > 0);
 
   if (!overlay.shouldShowChart) {
-    if (!override && chartCapable && result._selectableCms && result._activeCm) {
-      const dropdownRow = buildSkillCmDropdownRow(skill, result._selectableCms, result._activeCm.number);
-      if (dropdownRow) result.mapComponents.push(dropdownRow);
-    }
+    attachSkillMapDropdowns(result, skill, {
+      override,
+      mapOverrideCandidates,
+      mapOverrideQuery: activeMapOverrideQuery,
+      chartCapable,
+    });
     return result;
   }
 
@@ -391,10 +573,12 @@ async function buildSkillEmbedWithMap(skill, supporterList, req, options = {}) {
     ? { text: `${embed.footer.text} • ${suffix}` }
     : { text: suffix };
 
-  if (!override && result._selectableCms && result._activeCm) {
-    const dropdownRow = buildSkillCmDropdownRow(skill, result._selectableCms, result._activeCm.number);
-    if (dropdownRow) result.mapComponents.push(dropdownRow);
-  }
+  attachSkillMapDropdowns(result, skill, {
+    override,
+    mapOverrideCandidates,
+    mapOverrideQuery: activeMapOverrideQuery,
+    chartCapable: true,
+  });
 
   return result;
 }
@@ -1181,7 +1365,6 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           return;
         }
 
-        const selected = view.selected;
         const hasQuery = nameQuery.length > 0;
         const hasMatches = view.matches.length > 0;
         const header = hasQuery
@@ -1192,19 +1375,10 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
             : `❌ No matches for **${nameQuery}**. Showing the full ${view.monthLabel} schedule instead.`
           : `📅 ${view.monthLabel} schedule`;
 
-        const dropdownSource = view.monthEvents;
-
-        await sendFollowup(token, {
+        await sendFollowup(token, buildScheduleMessageData(view, {
           content: header,
-          embeds: [buildScheduleEmbed(selected, view.monthLabel, view.generatedAt)],
-          components: buildScheduleSelectRow(
-            dropdownSource,
-            selected.id,
-            hasQuery && view.matches.length > 1
-              ? `Multiple matches for "${nameQuery}" — pick one`
-              : `Select another ${view.monthLabel} event`,
-          ),
-        });
+          selected: view.selected,
+        }));
       } catch (err) {
         console.error("Schedule command error:", err);
         await sendFollowup(token, { content: "❌ Failed to load schedule." });
@@ -1791,6 +1965,53 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       });
     }
 
+    // Handling switching the course map shown under a skill (ambiguous map_override)
+    if (custom_id === "skill_map_override_select") {
+      const parsed = parseSkillMapOverrideSelectValue(values[0]);
+      if (!parsed) {
+        return res.send({
+          type: InteractionResponseType.UPDATE_MESSAGE,
+          data: { content: "⚠️ Could not parse map selection." }
+        });
+      }
+
+      const skill = skills.find(s =>
+        String(s.gametora_id ?? "") === parsed.identifier ||
+        s.skill_name.toLowerCase() === String(parsed.identifier ?? "").toLowerCase()
+      );
+
+      if (!skill) {
+        return res.send({
+          type: InteractionResponseType.UPDATE_MESSAGE,
+          data: { content: "❌ Could not find the selected skill." }
+        });
+      }
+
+      const supporterMatches = getSupporterMatchesForSkill(skill.skill_name);
+      const supporterList = supporterMatches.length
+        ? supporterMatches.map(s => `• ${s.character_name} - ${s.card_name} (${s.rarity.toUpperCase()})`).join('\n')
+        : 'None';
+
+      const { embed: skillEmbed, mapComponents, mapOverrideKey, mapCid } = await buildSkillEmbedWithMap(
+        skill,
+        supporterList,
+        req,
+        { mapOverride: parsed.mapKey, mapOverrideQuery: parsed.mapOverrideQuery }
+      );
+
+      return res.send({
+        type: InteractionResponseType.UPDATE_MESSAGE,
+        data: {
+          content: `✅ You selected **${skill.skill_name}**`,
+          embeds: [skillEmbed],
+          components: composeSkillComponents(
+            buildSkillComponents(skill, supporterMatches.length, supporterMatches, mapOverrideKey, mapCid),
+            mapComponents
+          )
+        }
+      });
+    }
+
     // Handling switching the Champions Meet map shown under a skill
     if (custom_id === "skill_cm_select") {
       const [cmNumberRaw, identifier] = String(values[0] ?? "").split("::");
@@ -1990,15 +2211,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
 
         return res.send({
           type: InteractionResponseType.UPDATE_MESSAGE,
-          data: {
-            content: `📅 ${view.monthLabel} schedule`,
-            embeds: [buildScheduleEmbed(view.selected, view.monthLabel, view.generatedAt)],
-            components: buildScheduleSelectRow(
-              view.monthEvents,
-              view.selected.id,
-              `Select another ${view.monthLabel} event`,
-            ),
-          },
+          data: buildScheduleMessageData(view),
         });
       } catch (err) {
         console.error('Schedule select handler failed:', err);
@@ -2007,6 +2220,75 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           data: {
             flags: InteractionResponseFlags.EPHEMERAL,
             content: '❌ Could not update the schedule card.',
+          },
+        });
+      }
+    }
+
+    if (custom_id === 'schedule_pickup_select') {
+      try {
+        const parsed = parseSchedulePickupValue(values?.[0]);
+        if (!parsed) {
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: '❌ Could not parse the selected pickup card.',
+            },
+          });
+        }
+
+        const view = await getCurrentMonthEventById(parsed.eventId);
+        const event = view.monthEvents.find((entry) => entry.id === parsed.eventId) || view.selected;
+        if (!event) {
+          return res.send({
+            type: InteractionResponseType.UPDATE_MESSAGE,
+            data: {
+              content: '❌ This schedule entry is no longer available for the current month.',
+              embeds: [],
+              components: [],
+            },
+          });
+        }
+
+        let extraEmbeds = [];
+        if (parsed.kind === 'support') {
+          const card = findSupporterByPickupId(parsed.pickupId);
+          if (!card) {
+            return res.send({
+              type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: '❌ Support card not found in bot data.',
+              },
+            });
+          }
+          extraEmbeds = [buildSupporterEmbed(card, skills)];
+        } else if (parsed.kind === 'character') {
+          const card = findCharacterByPickupId(parsed.pickupId);
+          if (!card) {
+            return res.send({
+              type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: '❌ Character card not found in bot data.',
+              },
+            });
+          }
+          extraEmbeds = [buildUmaEmbed(card, skills)];
+        }
+
+        return res.send({
+          type: InteractionResponseType.UPDATE_MESSAGE,
+          data: buildScheduleMessageData({ ...view, selected: event }, { extraEmbeds }),
+        });
+      } catch (err) {
+        console.error('Schedule pickup handler failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ Could not load the selected pickup card.',
           },
         });
       }

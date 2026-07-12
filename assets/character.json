@@ -1005,7 +1005,7 @@
                 "End": "A"
             }
         ],
-        "unique": "Adventure of 564",
+        "unique": "564 Escapades",
         "unique_explanation": "",
         "skills": [
             "Lucky Seven",
@@ -1739,7 +1739,7 @@
             "End": "F"
             }
         ],
-        "unique": "The Sea Glitters, but You're Dazzling",
+        "unique": "Your Smile Sparkles as the Waves",
         "unique_explanation": "",
         "skills": [
             "Focus",
@@ -5065,7 +5065,7 @@
             "tenno sho autumn october 2 year 3",
             "queen elizabeth ii cup november 1 year 3"
         ],
-        "aliases": ["sweep tosho original", "Platanus Witch", "yada yada monster"],
+        "aliases": ["sweep tosho original", "platanus witch", "yada yada monster"],
         "url": "https://gametora.com/umamusume/characters/104401-sweep-tosho",
         "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1044_104401.png",
         "review": "",
@@ -5312,7 +5312,7 @@
             "Leader's Pride",
             "Top Pick",
             "Kawasaki Racecourse",
-            "Promising Omen"
+            "Sunny Sign"
         ],
         "races": [
             "satsuki sho april 1 year 2",
@@ -5771,7 +5771,7 @@
             "End": "C"
             }
         ],
-        "unique": "Hot-Blooded Disciplinary Attack!",
+        "unique": "Red-Hot Discipline!",
         "unique_explanation": "",
         "skills": [
             "Ramp Up",
