@@ -479,6 +479,28 @@ function hasTodayAndYesterdayZeroDailyFans(member, now = new Date()) {
   return fans[dayIdx] === 0 && fans[dayIdx - 1] === 0;
 }
 
+function resolveDailyFansValueAt(rawFans, dayIdx) {
+  if (!Array.isArray(rawFans) || dayIdx == null || dayIdx < 0) return null;
+  for (let i = Math.min(dayIdx, rawFans.length - 1); i >= 0; i -= 1) {
+    const value = rawFans[i];
+    if (typeof value !== 'number') continue;
+    if (value > 0) return value;
+    if (value < 0) return Math.abs(value);
+  }
+  return null;
+}
+
+export function getTodayFanGain(rawFans, now = new Date()) {
+  const dayIdx = getCurrentJstDayIndex(now);
+  if (dayIdx == null || dayIdx <= 0) return 0;
+
+  const today = resolveDailyFansValueAt(rawFans, dayIdx);
+  const yesterday = resolveDailyFansValueAt(rawFans, dayIdx - 1);
+  if (today == null || yesterday == null) return 0;
+
+  return Math.max(0, today - yesterday);
+}
+
 export function getActiveCutoffMs(members) {
   const list = members || [];
   const stamps = list.map(getMemberLastUpdatedMs).filter((t) => t != null);
@@ -537,11 +559,42 @@ function stripDisplaySuffix(name) {
   return toHalfwidthAscii(name || '').trimEnd();
 }
 
+function charDisplayWidth(ch) {
+  const code = ch.codePointAt(0);
+  if (code == null) return 0;
+  // East Asian Wide / Fullwidth ranges commonly used in Discord monospace.
+  if (
+    (code >= 0x1100 && code <= 0x115f) ||
+    code === 0x2329 ||
+    code === 0x232a ||
+    (code >= 0x2e80 && code <= 0xa4cf) ||
+    (code >= 0xac00 && code <= 0xd7a3) ||
+    (code >= 0xf900 && code <= 0xfaff) ||
+    (code >= 0xfe10 && code <= 0xfe19) ||
+    (code >= 0xfe30 && code <= 0xfe6f) ||
+    (code >= 0xff00 && code <= 0xff60) ||
+    (code >= 0xffe0 && code <= 0xffe6) ||
+    (code >= 0x20000 && code <= 0x2fffd) ||
+    (code >= 0x30000 && code <= 0x3fffd)
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
 function truncateAndPadName(rawName, width) {
   let name = normalizeName(rawName || 'Unknown');
   name = stripDisplaySuffix(name);
-  if (name.length > width) name = name.slice(0, width);
-  return name.padEnd(width, ' ');
+
+  let result = '';
+  let used = 0;
+  for (const ch of name) {
+    const cw = charDisplayWidth(ch);
+    if (used + cw > width) break;
+    result += ch;
+    used += cw;
+  }
+  return result + ' '.repeat(Math.max(0, width - used));
 }
 
 export function buildTrainerRanks(circle, members, targetViewerId) {
@@ -742,6 +795,7 @@ export function buildLeaderboardEmbed(data, targetInfo = null) {
         monthlyGain: fanStats.monthlyGain,
         contributionFans: fanStats.contributionFans,
         averageDays: fanStats.averageDays,
+        todayGain: getTodayFanGain(m.daily_fans),
       };
     })
     .sort((a, b) => b.contributionFans - a.contributionFans);
@@ -749,17 +803,23 @@ export function buildLeaderboardEmbed(data, targetInfo = null) {
   const nameW = 13;
   const rankW = 4;
   const totalW = 6;
+  const todayW = 6;
   const dailyW = 6;
-  const header =
-    'Rank Name           Total  Daily  \n' +
-    '----------------------------------  ';
+  const colGap = '  ';
+  const headerLine =
+    `${'Rank'.padEnd(rankW, ' ')} ${'Name'.padEnd(nameW, ' ')}` +
+    `${colGap}${'Total'.padStart(totalW, ' ')}` +
+    `${colGap}${'Avg'.padStart(dailyW, ' ')}` +
+    `${colGap}${'Today'.padStart(todayW, ' ')}  `;
+  const header = `${headerLine}\n${'-'.repeat(headerLine.trimEnd().length)}  `;
 
   const rows = activeMembers.map((m, idx) => {
     const rank = `#${idx + 1}`.padEnd(rankW, ' ');
     const name = truncateAndPadName(m.trainer_name, nameW);
     const totalFans = formatCompactInt(m.contributionFans).padStart(totalW, ' ');
     const dailyAvg = formatCompactInt(Math.round(m.monthlyGain / m.averageDays)).padStart(dailyW, ' ');
-    return `${rank} ${name} ${totalFans} ${dailyAvg}  `;
+    const todayFans = formatCompactInt(m.todayGain).padStart(todayW, ' ');
+    return `${rank} ${name}${colGap}${totalFans}${colGap}${dailyAvg}${colGap}${todayFans}  `;
   });
 
   const lines = [];
@@ -822,6 +882,7 @@ function getActiveMembersWithClubLabel(data, clubLabel) {
         monthlyGain: fanStats.monthlyGain,
         contributionFans: fanStats.contributionFans,
         averageDays: fanStats.averageDays,
+        todayGain: getTodayFanGain(m.daily_fans),
       };
     });
 }
@@ -858,17 +919,23 @@ export function buildAllLeaderboardEmbeds(guildClubs, datasets) {
     const rankW = 4;
     const clubW = 4;
     const monthlyW = 7;
+    const todayW = 6;
     const dailyW = 6;
-    const header =
-      'Rank Name        Club Monthly  Daily  \n' +
-      '--------------------------------------  ';
+    const colGap = '  ';
+    const headerLine =
+      `${'Rank'.padEnd(rankW, ' ')} ${'Name'.padEnd(nameW, ' ')} ${'Club'.padEnd(clubW, ' ')}` +
+      `${colGap}${'Monthly'.padStart(monthlyW, ' ')}` +
+      `${colGap}${'Avg'.padStart(dailyW, ' ')}` +
+      `${colGap}${'Today'.padStart(todayW, ' ')}  `;
+    const header = `${headerLine}\n${'-'.repeat(headerLine.trimEnd().length)}  `;
     const rows = pageMembers.map((m, idx) => {
       const rank = `#${start + idx + 1}`.padEnd(rankW, ' ');
       const name = truncateAndPadName(m.trainer_name, nameW);
       const club = m.clubLabel || abbreviateClubLabel('—', clubW);
       const monthlyFans = formatCompactInt(m.contributionFans).padStart(monthlyW, ' ');
       const dailyAvg = formatCompactInt(Math.round(m.monthlyGain / m.averageDays)).padStart(dailyW, ' ');
-      return `${rank} ${name} ${club} ${monthlyFans} ${dailyAvg}  `;
+      const todayFans = formatCompactInt(m.todayGain).padStart(todayW, ' ');
+      return `${rank} ${name} ${club}${colGap}${monthlyFans}${colGap}${dailyAvg}${colGap}${todayFans}  `;
     });
 
     const lines = [];
