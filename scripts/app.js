@@ -45,6 +45,12 @@ import {
   resolveAutocompleteFocus,
   runClubComponentAction,
 } from './clubHandlers.js';
+import {
+  parseClubSettingsComponent,
+  parseClubSettingsModal,
+  runClubSettingsComponentAction,
+  runClubSettingsModalSubmit,
+} from './clubSettingsUi.js';
 import { getUmaApiKey } from './clubService.js';
 import { startLeaderboardCron } from './clubLeaderboardCron.js';
 import {
@@ -79,6 +85,13 @@ import {
   getCurrentMonthEventById,
   getCurrentMonthSchedule,
 } from './scheduleService.js';
+import {
+  dispatchSignupCommand,
+  handleSignupComponent,
+  handleSignupToggleClick,
+  isSignupCommand,
+} from './signupHandlers.js';
+import { startSignupCron } from './signupCron.js';
 
 import path from 'path';
 import { fileURLToPath } from "url";
@@ -1686,6 +1699,46 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       }
     }
 
+    if (isSignupCommand(name)) {
+      try {
+        const signupResult = await dispatchSignupCommand(req);
+        if (signupResult?.deferred) {
+          res.send({
+            type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+            data: signupResult.ephemeral ? { flags: InteractionResponseFlags.EPHEMERAL } : undefined,
+          });
+          (async () => {
+            try {
+              await signupResult.run((payload) => sendFollowup(token, payload));
+            } catch (err) {
+              console.error('signup deferred handler failed:', err);
+              try {
+                await sendFollowup(token, {
+                  flags: InteractionResponseFlags.EPHEMERAL,
+                  content: '❌ Something went wrong creating the signup.',
+                });
+              } catch (followupErr) {
+                console.error('signup follow-up failed:', followupErr);
+              }
+            }
+          })();
+          return;
+        }
+        if (signupResult) {
+          return res.send(signupResult);
+        }
+      } catch (err) {
+        console.error('signup command failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ Something went wrong creating the signup.',
+          },
+        });
+      }
+    }
+
     if (isEventGamblingCommand(name)) {
       const eventResult = await dispatchEventCommand(req);
       if (eventResult) {
@@ -1797,6 +1850,63 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           data: {
             flags: InteractionResponseFlags.EPHEMERAL,
             content: '❌ Something went wrong processing your donation.',
+          },
+        });
+      }
+    }
+
+    const signupToggle = handleSignupComponent(custom_id);
+    if (signupToggle) {
+      try {
+        const response = await handleSignupToggleClick(req, signupToggle.signupId);
+        return res.send(response);
+      } catch (err) {
+        console.error('Signup toggle handler failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ Something went wrong updating your signup.',
+          },
+        });
+      }
+    }
+
+    const clubSettingsAction = parseClubSettingsComponent(custom_id, values);
+    if (clubSettingsAction) {
+      const componentUserId = req.body.member?.user?.id || req.body.user?.id;
+      if (clubSettingsAction.ownerUserId && clubSettingsAction.ownerUserId !== componentUserId) {
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ That settings panel belongs to someone else.',
+          },
+        });
+      }
+
+      try {
+        const result = await runClubSettingsComponentAction(clubSettingsAction, {
+          member: req.body.member,
+          userId: componentUserId,
+        });
+        if (result?.type === 'modal') {
+          return res.send({
+            type: InteractionResponseType.MODAL,
+            data: result.modal,
+          });
+        }
+        return res.send({
+          type: InteractionResponseType.UPDATE_MESSAGE,
+          data: result,
+        });
+      } catch (err) {
+        console.error('Club settings component failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: `❌ ${err.message}`,
           },
         });
       }
@@ -2390,6 +2500,43 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
     }
   }
 
+  if (type === InteractionType.MODAL_SUBMIT) {
+    const { custom_id, components } = data;
+    const modalAction = parseClubSettingsModal(custom_id, components);
+    if (modalAction) {
+      const componentUserId = req.body.member?.user?.id || req.body.user?.id;
+      if (modalAction.ownerUserId && modalAction.ownerUserId !== componentUserId) {
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ That settings panel belongs to someone else.',
+          },
+        });
+      }
+
+      try {
+        const panel = await runClubSettingsModalSubmit(modalAction, {
+          member: req.body.member,
+          userId: componentUserId,
+        });
+        return res.send({
+          type: InteractionResponseType.UPDATE_MESSAGE,
+          data: panel,
+        });
+      } catch (err) {
+        console.error('Club settings modal failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: `❌ ${err.message}`,
+          },
+        });
+      }
+    }
+  }
+
 console.error('unknown interaction type', type);
 return res.status(400).json({ error: 'unknown interaction type' });
 });
@@ -2529,5 +2676,6 @@ app.listen(PORT, () => {
     console.error('Failed to resume active quizzes:', err.message);
   });
   startEventCron();
+  startSignupCron();
   postOpsNotice('✅ Tazuna bot started', `Listening on port ${PORT}`, 0x2ECC71);
 });
