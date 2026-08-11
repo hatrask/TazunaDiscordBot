@@ -255,6 +255,12 @@ const PROFILE_COMMAND = {
   description: 'Show your linked trainer profile, or look up a trainer on this server',
   options: [
     {
+      type: 6,
+      name: 'user',
+      description: 'Discord user to look up (uses their linked trainer)',
+      required: false,
+    },
+    {
       type: 3,
       name: 'name',
       description: 'Trainer name to look up (server clubs only)',
@@ -343,27 +349,6 @@ const CLUB_COMMAND = {
           type: 3,
           name: 'clubname',
           description: 'Registered club name for this server',
-          required: true,
-          autocomplete: true,
-        },
-      ],
-    },
-    {
-      type: 1,
-      name: 'settarget',
-      description: 'Set the rank tier target for a registered club (admin only)',
-      options: [
-        {
-          type: 3,
-          name: 'clubname',
-          description: 'Registered club name for this server',
-          required: true,
-          autocomplete: true,
-        },
-        {
-          type: 3,
-          name: 'target',
-          description: 'Target tier (SS, S+, S, A+, etc.)',
           required: true,
           autocomplete: true,
         },
@@ -541,23 +526,17 @@ const EPITHET_COMMAND = {
   contexts: [0, 1, 2],
 };
 
-const QP_COMMAND = {
-  name: 'qp',
-  description: 'Show a quick picture guide',
+const GUIDE_COMMAND = {
+  name: 'guide',
+  description: 'Show a picture guide',
   options: [
     {
       type: 3,
-      name: 'guide',
-      description: 'Which guide image to show',
+      name: 'name',
+      description: 'Which guide to show',
       required: true,
-      choices: [
-        { name: 'Sample Race Schedule', value: 'sample_schedule' },
-        { name: 'Race Bonus and Hammers', value: 'race_bonus_and_hammers' },
-        { name: 'Consecutive Race Penalty', value: 'consecutive_race_penalty' },
-        { name: 'Trackblazer Mood & Energy Events', value: 'mood_energy_mant' },
-        { name: 'Unique Levels', value: 'unique_levels' }
-      ]
-    }
+      autocomplete: true,
+    },
   ],
   type: 1,
   integration_types: [0, 1],
@@ -738,6 +717,48 @@ const SIGNUP_COMMAND = {
   ],
 };
 
+const SET_MINE_CHANNEL_COMMAND = {
+  name: 'setminechannel',
+  description: 'Post a mines board in this channel (admin, premium; multiple allowed)',
+  type: 1,
+  integration_types: [0],
+  contexts: [0],
+};
+
+const START_TIMER_COMMAND = {
+  name: 'starttimer',
+  description: 'Start a mine timer (default 50 minutes, premium servers)',
+  type: 1,
+  integration_types: [0],
+  contexts: [0],
+  options: [
+    {
+      type: 4,
+      name: 'minutes',
+      description: 'Timer length in minutes (default 50, max 50)',
+      required: false,
+      min_value: 1,
+      max_value: 50,
+    },
+  ],
+};
+
+const STOP_TIMER_COMMAND = {
+  name: 'stoptimer',
+  description: 'Cancel your active mine timer (premium servers)',
+  type: 1,
+  integration_types: [0],
+  contexts: [0],
+};
+
+const SET_APPLICATION_CHANNEL_COMMAND = {
+  name: 'setapplicationchannel',
+  description: 'Set this channel as the club application channel (admin only; uses registered clubs)',
+  type: 1,
+  integration_types: [0],
+  contexts: [0],
+};
+
 const ALL_COMMANDS = [
   SUPPORTER_COMMAND,
   SKILL_COMMAND,
@@ -753,10 +774,14 @@ const ALL_COMMANDS = [
   //SCHEDULE_COMMAND,
   RESOURCE_COMMAND,
   EPITHET_COMMAND,
-  QP_COMMAND,
+  //QP_COMMAND,
   //DONATE_COMMAND,
   BUGREPORT_COMMAND,
   REFRESHCACHE_COMMAND,
+  SET_MINE_CHANNEL_COMMAND,
+  START_TIMER_COMMAND,
+  STOP_TIMER_COMMAND,
+  SET_APPLICATION_CHANNEL_COMMAND,
 ];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

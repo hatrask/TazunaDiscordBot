@@ -2,7 +2,7 @@ import {
   InteractionResponseFlags,
   InteractionResponseType,
 } from 'discord-interactions';
-import { isGuildAdmin } from './clubHandlers.js';
+import { isTazunaAdmin, tazunaAdminDenied } from './adminRole.js';
 import {
   getUserLink,
   updateUserBettingState,
@@ -111,8 +111,8 @@ export async function handleGambacoinSetEventChannel(req) {
   const guildId = req.body.guild_id;
   const channelId = req.body.channel_id;
   if (!guildId || !channelId) return guildRequired();
-  if (!isGuildAdmin(req.body.member)) {
-    return ephemeral('❌ Only server administrators can use `/gambacoin seteventchannel`.');
+  if (!(await isTazunaAdmin(guildId, req.body.member))) {
+    return ephemeral(tazunaAdminDenied('use `/gambacoin seteventchannel`'));
   }
 
   setEventChannel(guildId, channelId);
@@ -143,8 +143,22 @@ export async function handleEventPost(req) {
   reloadEventsFromDisk();
   const result = await postEventEverywhere(eventId);
   if (!result.ok) return ephemeral(`❌ ${result.error}`);
+  const parts = [];
+  if (result.posted) {
+    parts.push(
+      `posted to **${result.posted}** new channel${result.posted === 1 ? '' : 's'}`,
+    );
+  }
+  if (result.updated) {
+    parts.push(
+      `updated **${result.updated}** existing channel${result.updated === 1 ? '' : 's'}`,
+    );
+  }
+  if (!parts.length) {
+    parts.push('no channels updated');
+  }
   return ephemeral(
-    `✅ Posted **${result.event.name}** (\`${result.event.id}\`) to **${result.posted}** channel${result.posted === 1 ? '' : 's'}.`,
+    `✅ **${result.event.name}** (\`${result.event.id}\`): ${parts.join(', ')}.`,
   );
 }
 

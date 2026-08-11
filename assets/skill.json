@@ -7682,7 +7682,7 @@
                 "conditions": [
                     "Mile",
                     "1st to 5th (CM), 1st to 6th (TT)",  
-                    "Random point in the second half of early race"
+                    "Random point in the second half of mid race"
                 ]
             }
         ],
@@ -7700,7 +7700,7 @@
             "triggers": [
                 {
                     "type": "box",
-                    "phase": "early",
+                    "phase": "mid",
                     "clip_within_segment_start_ratio": 0.5,
                     "trigger_behavior": "random"
                 }
@@ -10489,7 +10489,7 @@
                 "conditions": [
                     "Mile",
                     "1st to 5th (CM), 1st to 6th (TT)",  
-                    "Random point in the second half of early race"
+                    "Random point in the second half of med race"
                 ]
             }
         ],
@@ -10513,7 +10513,7 @@
             "triggers": [
                 {
                     "type": "box",
-                    "phase": "early",
+                    "phase": "med",
                     "clip_within_segment_start_ratio": 0.5,
                     "trigger_behavior": "random"
                 }
@@ -14702,6 +14702,156 @@
                     "type": "box",
                     "clip_start_ratio": 0.40,
                     "clip_end_ratio": 0.50,
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Ticket to Your Dreams!", "description": "Moderately increase velocity steadily when in midpack or further back on the final straight in the last spurt. Effect increases when activating a skill (up to 3 times).",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.25 for 6.0s. Increases by an additional 0.05 per skill activation up to 3 times.",
+                "inherited": "Increases target speed by 0.05 for 3.6s. Increases by an additional 0.05 per skill activation up to 3 times.",
+                "conditions": [
+                    "4th to 9th (CM), 5th to 12th (TT)",
+                    "Final non-corner",
+                    "Character is in their last spurt mode"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "ticket to your dreams",
+            "winning ticket steampunk"
+        ],
+        "horse": "Winning Ticket (Steampunk)",
+        "gametora_id": "110351",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "target": "layout",
+                    "match": "not_a_corner",
+                    "select": "last",
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Hephaestus", "description": "Aim higher, increasing velocity from midpack upon approaching the final straight late-race.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.35 for 5.0s.",
+                "inherited": "Increases target speed by 0.15 for 3.0s.",
+                "conditions": [
+                    "4th to 7th (CM), 5th to 9th (TT)",
+                    "Late race and beyond",
+                    "Second half of final corner"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "hephaestus",
+            "narita taishin steampunk"
+        ],
+        "horse": "Narita Taishin (Steampunk)",
+        "gametora_id": "110501",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "phase": "late_and_beyond",
+                    "target": "layout",
+                    "match": "not_a_corner",
+                    "select": "last",
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Snow Bright, Snow Flight", "description": "With 300m or less remaining, increase velocity when leading or positioned toward the front close to the lead runner.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.35 for 5.0s.",
+                "inherited": "Increases target speed by 0.15 for 3.0s.",
+                "conditions": [
+                    "1st to 4th (CM), 1st to 5th (TT)",
+                    "≤5m behind 1st place",
+                    "≤300m of the race remaining"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "snow bright snow flight",
+            "yukino bijin original"
+        ],
+        "horse": "Yukino Bijin (Original)",
+        "gametora_id": "100291",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "line",
+                    "distance_mode": "remaining",
+                    "value": 300
+                }
+            ]
+        }
+    },
+    {   "skill_name": "I'm Possible!", "description": "Increase velocity when positioned 2nd or later within 4 lengths of the lead with 200m remaining. If within 2 lengths, increase velocity greatly instead.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.45 for 5.0s.",
+                "inherited": "Increases target speed by 0.25 for 3.0s.",
+                "conditions": [
+                    "≥2nd place",
+                    "≤5m behind 1st place",
+                    "≤201m of the race remaining",
+                    "≥199m of the race remaining"
+                ]
+            },
+            {
+                "description": "Increases target speed by 0.35 for 5.0s.",
+                "inherited": "Increases target speed by 0.15 for 3.0s.",
+                "conditions": [
+                    "≥2nd place",
+                    "≤10m behind 1st place",
+                    "≤201m of the race remaining",
+                    "≥199m of the race remaining"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "im possible",
+            "seeking the pearl original"
+        ],
+        "horse": "Seeking the Pearl (Original)",
+        "gametora_id": "100421",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "distance_mode": "remaining",
+                    "remaining_start": 201,
+                    "remaining_end": 199,
                     "trigger_behavior": "asap"
                 }
             ]

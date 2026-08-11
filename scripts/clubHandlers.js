@@ -14,7 +14,6 @@ import {
   unregisterGuildClub,
   upsertLeaderboardChannel,
   upsertUserLink,
-  setGuildClubTarget,
 } from './clubDatabase.js';
 import {
   handleClubSettingsCommand,
@@ -35,9 +34,6 @@ import {
   findClubsByName,
   findTrainerCandidates,
   buildLeaderboardPackage,
-  findRankThreshold,
-  formatTierRankRange,
-  getRankThresholds,
   isAllClubsLeaderboardQuery,
   isTop100Circle,
   pickBestProfileMatch,
@@ -46,15 +42,7 @@ import {
 } from './clubService.js';
 import { hashLeaderboardContent } from './clubLeaderboardCron.js';
 import { DiscordRequest } from './utils.js';
-
-const ADMINISTRATOR = 0x8n;
-
-const BOT_OWNER_IDS = new Set(
-  String(process.env.BOT_OWNER_IDS || process.env.BOT_OWNER_ID || '')
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean),
-);
+import { isTazunaAdmin, tazunaAdminDenied } from './adminRole.js';
 
 const ALL_CLUBS_AUTOCOMPLETE = { name: 'All Clubs', value: 'all' };
 const LB_ALL_PAGE_RE = /^lb_all_(prev|next):([^:]+):([^:]+):(\d+)$/;
@@ -84,17 +72,8 @@ function getOptionUserId(req, name) {
   return opt?.value ?? null;
 }
 
-export function isGuildAdmin(member) {
-  if (!member?.permissions) return false;
-  try {
-    return (BigInt(member.permissions) & ADMINISTRATOR) === ADMINISTRATOR;
-  } catch {
-    return false;
-  }
-}
-
-function isBotOwner(userId) {
-  return Boolean(userId && BOT_OWNER_IDS.has(userId));
+export async function isGuildAdmin(member, guildId) {
+  return isTazunaAdmin(guildId, member);
 }
 
 function ephemeral(content) {
@@ -201,27 +180,6 @@ export function buildLeaderboardAutocompleteChoices(guildId, rawQuery) {
   return choices.slice(0, 25);
 }
 
-export async function buildTargetTierAutocompleteChoices(rawQuery) {
-  const query = rawQuery.trim().toLowerCase();
-  let tiers;
-  try {
-    tiers = await getRankThresholds();
-  } catch {
-    return [];
-  }
-
-  return tiers
-    .filter((tier) => !query || tier.tier.toLowerCase().includes(query))
-    .map((tier) => {
-      const label = formatTierRankRange(tier);
-      return {
-        name: label.slice(0, 100),
-        value: tier.tier.slice(0, 100),
-      };
-    })
-    .slice(0, 25);
-}
-
 function resolveGuildClubFromName(guildId, clubNameArg) {
   const guildClubs = getGuildClubs(guildId);
   if (!guildClubs.length) {
@@ -296,8 +254,8 @@ export async function handleRegisterClub(req) {
   const guildId = req.body.guild_id;
   if (!guildId) return guildRequiredResponse();
   const userId = req.body.member?.user?.id || req.body.user?.id;
-  if (!isGuildAdmin(req.body.member) && !isBotOwner(userId)) {
-    return ephemeral('❌ Only server administrators or the bot owner can use `/club registerclub`.');
+  if (!(await isTazunaAdmin(guildId, req.body.member, { allowBotOwner: true, userId }))) {
+    return ephemeral(tazunaAdminDenied('use `/club registerclub`'));
   }
 
   const circleId = String(getOptionValue(req, 'id') ?? '').trim();
@@ -337,8 +295,8 @@ export async function handleRegisterClub(req) {
 export async function handleUnregisterClub(req) {
   const guildId = req.body.guild_id;
   if (!guildId) return guildRequiredResponse();
-  if (!isGuildAdmin(req.body.member)) {
-    return ephemeral('❌ Only server administrators can use `/club unregisterclub`.');
+  if (!(await isTazunaAdmin(guildId, req.body.member))) {
+    return ephemeral(tazunaAdminDenied('use `/club unregisterclub`'));
   }
 
   const circleId = String(getOptionValue(req, 'id') ?? '').trim();
@@ -398,8 +356,8 @@ export async function handleRegister(req) {
 export async function handleRegisterForced(req) {
   const guildId = req.body.guild_id;
   if (!guildId) return guildRequiredResponse();
-  if (!isGuildAdmin(req.body.member)) {
-    return ephemeral('❌ Only server administrators can use `/club registerforced`.');
+  if (!(await isTazunaAdmin(guildId, req.body.member))) {
+    return ephemeral(tazunaAdminDenied('use `/club registerforced`'));
   }
 
   const targetUserId = getOptionUserId(req, 'user');
@@ -444,16 +402,82 @@ export async function handleRegisterForced(req) {
   };
 }
 
+async function sendLinkedProfileFollowup(sendFollowup, {
+  targetUserId,
+  guildId,
+  selfLookup,
+}) {
+  const link = getUserLink(targetUserId);
+  if (!link) {
+    await sendFollowup({
+      content: selfLookup
+        ? 'You do not have a trainer profile yet. Use `/register` with your umamusume id.'
+        : `❌ <@${targetUserId}> does not have a linked trainer profile.`,
+    });
+    return;
+  }
+
+  if (!isUmaLinked(link)) {
+    await sendFollowup({ embeds: [buildUnlinkedProfileEmbed(link)] });
+    return;
+  }
+
+  const guildClubIds = guildId ? getGuildClubs(guildId).map((club) => club.circleId) : [];
+  const { embed, resolvedCircle } = await buildProfileEmbedForViewerId(link.viewerId, {
+    circleIdHint: link.circleId || undefined,
+    searchCircleIds: guildClubIds,
+    festa: {
+      gambaCoins: link.gambaCoins,
+      gambaWr: link.gambaWr,
+      quizAccuracy: link.quizAccuracy,
+      openTickets: link.openTickets,
+      betHistory: link.betHistory,
+    },
+  });
+
+  if (
+    selfLookup &&
+    resolvedCircle?.circleId &&
+    (String(link.circleId) !== String(resolvedCircle.circleId) ||
+      link.circleName !== resolvedCircle.circleName)
+  ) {
+    upsertUserLink({
+      discordUserId: targetUserId,
+      viewerId: link.viewerId,
+      trainerName: link.trainerName,
+      circleId: resolvedCircle.circleId,
+      circleName: resolvedCircle.circleName,
+      registeredGuildId: guildId,
+    });
+  }
+
+  await sendFollowup({ embeds: [embed] });
+}
+
 export async function handleProfile(req) {
   const userId = req.body.member?.user?.id || req.body.user?.id;
   const guildId = req.body.guild_id ?? null;
+  const targetUserId = getOptionUserId(req, 'user');
   const nameArg = getOptionValue(req, 'name');
+
+  if (targetUserId && nameArg) {
+    return ephemeral('❌ Use either `user` or `name`, not both.');
+  }
 
   return {
     deferred: true,
     ephemeral: false,
     run: async (sendFollowup) => {
       try {
+        if (targetUserId) {
+          await sendLinkedProfileFollowup(sendFollowup, {
+            targetUserId: String(targetUserId),
+            guildId,
+            selfLookup: String(targetUserId) === String(userId),
+          });
+          return;
+        }
+
         if (nameArg) {
           if (!guildId) {
             await sendFollowup({
@@ -507,49 +531,11 @@ export async function handleProfile(req) {
           return;
         }
 
-        const link = getUserLink(userId);
-        if (!link) {
-          await sendFollowup({
-            content:
-              'You do not have a trainer profile yet. Use `/register` with your umamusume id.',
-          });
-          return;
-        }
-
-        if (!isUmaLinked(link)) {
-          await sendFollowup({ embeds: [buildUnlinkedProfileEmbed(link)] });
-          return;
-        }
-
-        const guildClubIds = guildId ? getGuildClubs(guildId).map((club) => club.circleId) : [];
-        const { embed, resolvedCircle } = await buildProfileEmbedForViewerId(link.viewerId, {
-          circleIdHint: link.circleId || undefined,
-          searchCircleIds: guildClubIds,
-          festa: {
-            gambaCoins: link.gambaCoins,
-            gambaWr: link.gambaWr,
-            quizAccuracy: link.quizAccuracy,
-            openTickets: link.openTickets,
-            betHistory: link.betHistory,
-          },
+        await sendLinkedProfileFollowup(sendFollowup, {
+          targetUserId: userId,
+          guildId,
+          selfLookup: true,
         });
-
-        if (
-          resolvedCircle?.circleId &&
-          (String(link.circleId) !== String(resolvedCircle.circleId) ||
-            link.circleName !== resolvedCircle.circleName)
-        ) {
-          upsertUserLink({
-            discordUserId: userId,
-            viewerId: link.viewerId,
-            trainerName: link.trainerName,
-            circleId: resolvedCircle.circleId,
-            circleName: resolvedCircle.circleName,
-            registeredGuildId: guildId,
-          });
-        }
-
-        await sendFollowup({ embeds: [embed] });
       } catch (err) {
         console.error('profile failed:', err);
         await sendFollowup({ content: `❌ Failed: ${err.message}` });
@@ -657,8 +643,8 @@ export async function handleSetLeaderboardChannel(req) {
   const guildId = req.body.guild_id;
   const channelId = req.body.channel_id;
   if (!guildId) return guildRequiredResponse();
-  if (!isGuildAdmin(req.body.member)) {
-    return ephemeral('❌ Only server administrators can use `/club setleaderboardchannel`.');
+  if (!(await isTazunaAdmin(guildId, req.body.member))) {
+    return ephemeral(tazunaAdminDenied('use `/club setleaderboardchannel`'));
   }
 
   const clubNameArg = String(getOptionValue(req, 'clubname') ?? '').trim();
@@ -702,65 +688,6 @@ export async function handleSetLeaderboardChannel(req) {
         await sendFollowup({
           flags: InteractionResponseFlags.EPHEMERAL,
           content: `❌ Failed to set leaderboard channel: ${err.message}`,
-        });
-      }
-    },
-  };
-}
-
-export async function handleSetTarget(req) {
-  const guildId = req.body.guild_id;
-  if (!guildId) return guildRequiredResponse();
-  if (!isGuildAdmin(req.body.member)) {
-    return ephemeral('❌ Only server administrators can use `/club settarget`.');
-  }
-
-  const clubNameArg = String(getOptionValue(req, 'clubname') ?? '').trim();
-  const targetArg = String(getOptionValue(req, 'target') ?? '').trim();
-  if (!clubNameArg) return ephemeral('❌ Please provide a club name.');
-  if (!targetArg) return ephemeral('❌ Please provide a target tier.');
-
-  const resolved = resolveGuildClubFromName(guildId, clubNameArg);
-  if (resolved.error) return ephemeral(resolved.error);
-
-  return {
-    deferred: true,
-    ephemeral: true,
-    run: async (sendFollowup) => {
-      try {
-        const tiers = await getRankThresholds();
-        const threshold = findRankThreshold(tiers, targetArg);
-        if (!threshold) {
-          const valid = tiers.map((tier) => tier.tier).join(', ') || 'none loaded';
-          await sendFollowup({
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content:
-              `❌ Unknown tier \`${targetArg}\`. Pick from autocomplete or use one of: ${valid}`,
-          });
-          return;
-        }
-
-        const saved = setGuildClubTarget(guildId, resolved.circleId, threshold.tier);
-        if (!saved) {
-          await sendFollowup({
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content: '❌ Could not save target for that club.',
-          });
-          return;
-        }
-
-        const clubLabel = resolved.club.circleName || resolved.circleId;
-        await sendFollowup({
-          flags: InteractionResponseFlags.EPHEMERAL,
-          content:
-            `✅ Set **${clubLabel}** target to **${formatTierRankRange(threshold)}**. ` +
-            'Leaderboards for this server will show the target tier and per-member daily target.',
-        });
-      } catch (err) {
-        console.error('settarget failed:', err);
-        await sendFollowup({
-          flags: InteractionResponseFlags.EPHEMERAL,
-          content: `❌ Failed to set target: ${err.message}`,
         });
       }
     },
@@ -815,8 +742,6 @@ export function dispatchClubCommand(name, req) {
       return handleLeaderboard(req);
     case 'setleaderboardchannel':
       return handleSetLeaderboardChannel(req);
-    case 'settarget':
-      return handleSetTarget(req);
     case 'settings':
       return handleClubSettings(req);
     case 'setpremium':

@@ -38,7 +38,6 @@ import {
 import {
   buildLeaderboardAutocompleteChoices,
   buildRegisteredClubAutocompleteChoices,
-  buildTargetTierAutocompleteChoices,
   dispatchClubCommand,
   handleClubComponent,
   isClubCommand,
@@ -86,12 +85,36 @@ import {
   getCurrentMonthSchedule,
 } from './scheduleService.js';
 import {
+  buildGuideAutocompleteChoices,
+  findGuideByIdOrQuery,
+  findGuides,
+} from './guideService.js';
+import {
   dispatchSignupCommand,
   handleSignupComponent,
   handleSignupToggleClick,
   isSignupCommand,
 } from './signupHandlers.js';
 import { startSignupCron } from './signupCron.js';
+import {
+  dispatchMineAlarmCommand,
+  handleMineAlarmClick,
+  handleMineAlarmComponent,
+  isMineAlarmCommand,
+} from './mineAlarmHandlers.js';
+import {
+  handleApplicationCancel,
+  handleApplicationDecision,
+  handleApplicationModalSubmit,
+  handleClearApplicationList,
+  handleOpenApplicationModal,
+  handleSetApplicationChannelCommand,
+  isApplicationChannelCommand,
+  isApplicationModalSubmit,
+  parseApplicationComponent,
+} from './applicationHandlers.js';
+import { startMineAlarmCron } from './mineAlarmCron.js';
+import { resumeMineAlarmsOnBoot } from './mineAlarmService.js';
 
 import path from 'path';
 import { fileURLToPath } from "url";
@@ -106,8 +129,8 @@ const MAP_RENDERER_CACHE_VERSION = 'v3';
 // users can't trigger image generation for an unbounded number of CMs.
 // Adjust SKILL_MAP_MAX_CM_NUMBER (or the env var) to decide the highest CM shown.
 // The effective lower bound is dynamic: max(configured minimum, current upcoming CM).
-const SKILL_MAP_MIN_CM_NUMBER = Number(process.env.SKILL_MAP_MIN_CM_NUMBER ?? 16);
-const SKILL_MAP_MAX_CM_NUMBER = Number(process.env.SKILL_MAP_MAX_CM_NUMBER ?? 17);
+const SKILL_MAP_MIN_CM_NUMBER = Number(process.env.SKILL_MAP_MIN_CM_NUMBER ?? 17);
+const SKILL_MAP_MAX_CM_NUMBER = Number(process.env.SKILL_MAP_MAX_CM_NUMBER ?? 19);
 
 const characters = cache.characters;
 const supporters = cache.supporters;
@@ -119,6 +142,7 @@ const legendraces = cache.legendraces;
 const misc = cache.misc;
 const resources = cache.resources;
 const epithets = cache.epithets;
+const guides = cache.guides;
 
 function getRequestBaseUrl(req) {
   const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
@@ -740,18 +764,10 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       const choices =
         focus.subcommand === 'leaderboard'
           ? buildLeaderboardAutocompleteChoices(req.body.guild_id, focus.value)
-          : focus.subcommand === 'setleaderboardchannel' || focus.subcommand === 'settarget'
+          : focus.subcommand === 'setleaderboardchannel'
             ? buildRegisteredClubAutocompleteChoices(req.body.guild_id, focus.value)
             : [];
 
-      return res.send({
-        type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
-        data: { choices },
-      });
-    }
-
-    if (data.name === 'club' && focus.optionName === 'target' && focus.subcommand === 'settarget') {
-      const choices = await buildTargetTierAutocompleteChoices(focus.value);
       return res.send({
         type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
         data: { choices },
@@ -836,6 +852,14 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       }
     }
 
+    if (data.name === 'guide' && focus.optionName === 'name') {
+      const choices = buildGuideAutocompleteChoices(focus.value, guides);
+      return res.send({
+        type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
+        data: { choices },
+      });
+    }
+
     return res.send({
       type: InteractionResponseType.APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
       data: { choices: [] },
@@ -876,9 +900,10 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           });
         } catch (err) {
           console.error('Manual cache refresh failed:', err);
+          const detail = String(err?.message || err).slice(0, 180);
           await sendFollowup(token, {
             flags: InteractionResponseFlags.EPHEMERAL,
-            content: '❌ Cache refresh failed.'
+            content: `❌ Cache refresh failed.\n\`${detail}\``
           });
         }
       })();
@@ -1432,39 +1457,26 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       }
     }
 
-    // "qp" command
-    if (name === 'qp') {
-      const guideKey = data.options?.find(opt => opt.name === "guide")?.value;
-
-      const qpGuides = {
-        sample_schedule: {
-          title: "Sample Race Schedule",
-          filename: "sample_schedule.png",
-        },
-        race_bonus_and_hammers: {
-          title: "Race Bonus and Hammers",
-          filename: "race_bonus_and_hammers.png",
-        },
-        consecutive_race_penalty: {
-          title: "Consecutive Race Penalty",
-          filename: "consecutive_race_penalty.png",
-        },
-        mood_energy_mant: {
-          title: "Trackblazer Mood & Energy Events",
-          filename: "mood_energy_mant.png",
-        },
-        unique_levels: {
-          title: "Unique Levels",
-          filename: "unique_levels.png",
-        },
-      };
-
-      const guide = qpGuides[guideKey];
+    // "guide" command (replaces /qp)
+    if (name === 'guide') {
+      const guideQuery = data.options?.find((opt) => opt.name === 'name')?.value;
+      const guide = findGuideByIdOrQuery(guideQuery, guides);
 
       if (!guide) {
+        const matches = findGuides(guideQuery, guides);
+        if (matches.length > 1) {
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content:
+                `🔎 Found ${matches.length} guides. Pick one with autocomplete:\n` +
+                matches.slice(0, 10).map((entry) => `• ${entry.title}`).join('\n'),
+            },
+          });
+        }
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: { content: "❌ Unknown guide selected." }
+          data: { content: `❌ Guide "${guideQuery}" not found.` },
         });
       }
 
@@ -1479,10 +1491,10 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           embeds: [
             {
               title: guide.title,
-              image: { url: imageUrl }
-            }
-          ]
-        }
+              image: { url: imageUrl },
+            },
+          ],
+        },
       });
     }
 
@@ -1739,6 +1751,46 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       }
     }
 
+    if (isMineAlarmCommand(name)) {
+      try {
+        const mineResult = await dispatchMineAlarmCommand(req);
+        if (mineResult?.deferred) {
+          res.send({
+            type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+            data: mineResult.ephemeral ? { flags: InteractionResponseFlags.EPHEMERAL } : undefined,
+          });
+          (async () => {
+            try {
+              await mineResult.run((payload) => sendFollowup(token, payload));
+            } catch (err) {
+              console.error('mine alarm deferred handler failed:', err);
+              try {
+                await sendFollowup(token, {
+                  flags: InteractionResponseFlags.EPHEMERAL,
+                  content: '❌ Something went wrong with the mine alarm.',
+                });
+              } catch (followupErr) {
+                console.error('mine alarm follow-up failed:', followupErr);
+              }
+            }
+          })();
+          return;
+        }
+        if (mineResult) {
+          return res.send(mineResult);
+        }
+      } catch (err) {
+        console.error('mine alarm command failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: '❌ Something went wrong with the mine alarm.',
+          },
+        });
+      }
+    }
+
     if (isEventGamblingCommand(name)) {
       const eventResult = await dispatchEventCommand(req);
       if (eventResult) {
@@ -1775,12 +1827,67 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
       }
     }
 
+    if (isApplicationChannelCommand(name)) {
+      const appResult = await handleSetApplicationChannelCommand(req);
+      if (appResult?.deferred) {
+        res.send({
+          type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+          data: appResult.ephemeral ? { flags: InteractionResponseFlags.EPHEMERAL } : undefined,
+        });
+        (async () => {
+          try {
+            await appResult.run((payload) => sendFollowup(token, payload));
+          } catch (err) {
+            console.error('setapplicationchannel deferred handler failed:', err);
+            try {
+              await sendFollowup(token, {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: '❌ Something went wrong. Please try again later.',
+              });
+            } catch (followupErr) {
+              console.error('setapplicationchannel follow-up failed:', followupErr);
+            }
+          }
+        })();
+        return;
+      }
+      if (appResult) return res.send(appResult);
+    }
+
     console.error(`unknown command: ${name}`);
     return res.status(400).json({ error: 'unknown command' });
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
     const { custom_id, values } = data;
+
+    // ── Application channel components ──
+    const appComponent = parseApplicationComponent(custom_id);
+    if (appComponent) {
+      try {
+        let response;
+        if (appComponent.action === 'open_modal') {
+          response = await handleOpenApplicationModal(req);
+        } else if (appComponent.action === 'clear_list') {
+          response = await handleClearApplicationList(req);
+        } else if (appComponent.action === 'approve') {
+          response = await handleApplicationDecision(req, appComponent.appId, 'approved');
+        } else if (appComponent.action === 'reject') {
+          response = await handleApplicationDecision(req, appComponent.appId, 'rejected');
+        } else if (appComponent.action === 'waitlist') {
+          response = await handleApplicationDecision(req, appComponent.appId, 'waitlisted');
+        } else if (appComponent.action === 'cancel') {
+          response = await handleApplicationCancel(req, appComponent.appId);
+        }
+        if (response) return res.send(response);
+      } catch (err) {
+        console.error('Application component handler failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { flags: InteractionResponseFlags.EPHEMERAL, content: '❌ Something went wrong.' },
+        });
+      }
+    }
 
     const quizAnswer = handleQuizAnswerComponent(custom_id);
     if (quizAnswer) {
@@ -1870,6 +1977,38 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
           },
         });
       }
+    }
+
+    const mineAlarmAction = handleMineAlarmComponent(custom_id);
+    if (mineAlarmAction) {
+      // Acknowledge immediately — board edits can exceed Discord's 3s window.
+      res.send({
+        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { flags: InteractionResponseFlags.EPHEMERAL },
+      });
+      (async () => {
+        try {
+          const response = await handleMineAlarmClick(req, mineAlarmAction);
+          const data = response?.data || { content: '✅ Done.' };
+          await sendFollowup(token, {
+            flags: data.flags ?? InteractionResponseFlags.EPHEMERAL,
+            content: data.content,
+            embeds: data.embeds,
+            components: data.components,
+          });
+        } catch (err) {
+          console.error('Mine alarm button handler failed:', err);
+          try {
+            await sendFollowup(token, {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: '❌ Something went wrong with the mine alarm.',
+            });
+          } catch (followupErr) {
+            console.error('Mine alarm follow-up failed:', followupErr);
+          }
+        }
+      })();
+      return;
     }
 
     const clubSettingsAction = parseClubSettingsComponent(custom_id, values);
@@ -2502,6 +2641,41 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
 
   if (type === InteractionType.MODAL_SUBMIT) {
     const { custom_id, components } = data;
+
+    // ── Application modal ──
+    if (isApplicationModalSubmit(custom_id)) {
+      try {
+        const appResult = await handleApplicationModalSubmit(req);
+        if (appResult?.deferred) {
+          res.send({
+            type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
+            data: appResult.ephemeral ? { flags: InteractionResponseFlags.EPHEMERAL } : undefined,
+          });
+          (async () => {
+            try {
+              await appResult.run((payload) => sendFollowup(token, payload));
+            } catch (err) {
+              console.error('application modal deferred handler failed:', err);
+              try {
+                await sendFollowup(token, {
+                  flags: InteractionResponseFlags.EPHEMERAL,
+                  content: '❌ Failed to submit your application.',
+                });
+              } catch {}
+            }
+          })();
+          return;
+        }
+        if (appResult) return res.send(appResult);
+      } catch (err) {
+        console.error('Application modal submit failed:', err);
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { flags: InteractionResponseFlags.EPHEMERAL, content: `❌ ${err.message}` },
+        });
+      }
+    }
+
     const modalAction = parseClubSettingsModal(custom_id, components);
     if (modalAction) {
       const componentUserId = req.body.member?.user?.id || req.body.user?.id;
@@ -2677,5 +2851,9 @@ app.listen(PORT, () => {
   });
   startEventCron();
   startSignupCron();
+  startMineAlarmCron();
+  resumeMineAlarmsOnBoot().catch((err) => {
+    console.error('Failed to resume mine alarms:', err.message);
+  });
   postOpsNotice('✅ Tazuna bot started', `Listening on port ${PORT}`, 0x2ECC71);
 });

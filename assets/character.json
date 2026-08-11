@@ -1089,6 +1089,7 @@
             "Shifting Gears",
             "All I've Got",
             "Slick Surge",
+            "Pedal to the Metal",
             "Nimble Navigator"
         ],
         "races": [
@@ -3636,7 +3637,7 @@
     {   "id": "102901 - Yukino Bijin", 
         "character_name": "Yukino Bijin",
         "type": "Original",
-        "costume": "Cute Sweet Flower of Mutsu",
+        "costume": "Darl'n Snowflake",
         "rarity": "⭐⭐⭐",
         "stat_bonuses": [
             {
@@ -3665,7 +3666,7 @@
             "End": "G"
             }
         ],
-        "unique": "Chasing the Snowlight",
+        "unique": "Snow Bright, Snow Flight",
         "unique_explanation": "",
         "skills": [
             "Nimble Navigator",
@@ -3682,7 +3683,14 @@
             "Winter Runner",
             "Downhill Speedster",
             "Corner Acceleration",
-            "Head-On"
+            "Head-On",
+            "Morioka Racecourse",
+            "Full Tilt"
+        ],
+        "evo_skills": [
+            "Like They Do in the City!",
+            "Snow Gals Know Howta Sled!",
+            "Steadfast Determination"
         ],
         "races": [
             "hanshin juvenile fillies december 1 year 1",
@@ -3695,7 +3703,7 @@
             "queen elizabeth ii cup november 1 year 3",
             "japan cup november 2 year 3"
         ],
-        "aliases": ["yukino bijin original", "cute sweet flower of mutsu"],
+        "aliases": ["yukino bijin original", "darln snowflake", "darling snowflake"],
         "url": "https://gametora.com/umamusume/characters/102901-yukino-bijin",
         "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1029_102901.png",
         "review": "",
@@ -3711,10 +3719,14 @@
             {
             "conditions": "Win the Triple Tiara (Oka Sho, Japanese Oaks, Shuka Sho) and the Hanshin Juvenile Fillies (Bad Result)",
             "rewards": "Guts +5, Wit +5"
+            },
+            {
+            "conditions": "Win the M.C. Nambu Hai (Year 2 or Year 3)",
+            "rewards": "Energy -15, 1 random stat +10, Power +20, Guts +10, Skill points +45, Morioka Racecourse hint +5, Full Tilt hint +1"
             }
         ],
         "epithet": {
-            "name": "Bonny Lass From Iwate",
+            "name": "Iwate's Natural Beauty",
             "condition": "Win a graded race held in Morioka\nWin the Oka Sho, Japanese Oaks and Shuka Sho\nEarn a total of at least 320,000 fans"
         }
     },
@@ -4222,6 +4234,10 @@
             "Slick Surge",
             "Outer Swell"
         ],
+        "evo_skills": [
+            "Never Ever Give Up",
+            "Winning Road"
+        ],
         "races": [
             "hopeful stakes december 1 year 1",
             "yayoi sho march 1 year 2",
@@ -4237,6 +4253,84 @@
         ],
         "url": "https://gametora.com/umamusume/characters/103501-winning-ticket",
         "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1035_103501.png",
+        "review": "",
+        "secrets": [
+            {
+            "conditions": "Win races where Biwa Hayahide or Narita Taishin run",
+            "rewards": "7+ \nSpeed +15, Power +15, Skill points +15, Outer Swell hint +2\n\n4-6 \nSpeed +10, Power +10 \n\n1-3 \nSpeed +10"
+            }
+        ],
+        "epithet": {
+            "name": "Herald of a New Age",
+            "condition": "Win the Yayoi Sho as the most popular\nWin the Satsuki Sho as the most popular\nWin the Tokyo Yushun (Japanese Derby) as the most popular\nWin the Kikuka Sho as the most popular\nWin the Arima Kinen (Year 2)\nEarn a total of at least 240,000 fans"
+        }
+    },
+    {   "id": "103502 - Winning Ticket Steampunk",
+        "character_name": "Winning Ticket",
+        "type": "Steampunk",
+        "costume": "Dream Deliverer",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "8%",
+            "stamina": "",
+            "power": "14%",
+            "guts": "8%",
+            "wit": ""
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "G"
+            },
+            {
+            "Sprint": "G",
+            "Mile": "F",
+            "Medium": "A",
+            "Long": "B"
+            },
+            {
+            "Front": "G",
+            "Pace": "B",
+            "Late": "A",
+            "End": "G"
+            }
+        ],
+        "unique": "Ticket to Your Dreams!",
+        "unique_explanation": "",
+        "skills": [
+            "Downhill Speedster",
+            "1,500,000 CC",
+            "All I've Got"
+        ],
+        "potential": [
+            "Position Pilfer",
+            "15,000,000 CC",
+            "Full Throttle",
+            "Come What May"
+        ],
+        "event_skills": [
+            "Nimble Navigator",
+            "Late Surger Straightaways",
+            "Late Surger Corners",
+            "Position Pilfer",
+            "Slick Surge",
+            "Medium Corners",
+            "Take the Chance",
+            "Long Straightaways",
+            "Passing Pro",
+            "Outer Swell"
+        ],
+        "evo_skills":[
+            "Superpowered Engines!",
+            "I Can Fly!"
+        ],
+        "aliases": [
+            "winning ticket steampunk", "dream deliverer"
+        ],
+        "url": "https://gametora.com/umamusume/characters/103502-winning-ticket",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1035_103502.png",
         "review": "",
         "secrets": [
             {
@@ -5348,7 +5442,92 @@
         "secrets": [
             {
             "conditions": "Random event",
-            "rewards": "Get Fan Promise (Hokkaido/Hokuto/Nakayama/Kansai/Kokura) status"
+            "rewards": "Get Fan Promise (Hokkaido/Hokuto/Nakayama/Kansai/Kokura/Kawasaki) status"
+            },
+            {
+            "conditions": "Finish the Fan Promise by winning a race in that region",
+            "rewards": "Mood +1, 2 stats +10, Skill points +10, Relevant track skill hint +5"
+            },
+            {
+            "conditions": "Have at least 120000 fans before the finals",
+            "rewards": "Mood +1, Guts +20, Top Pick hint +3"
+            },
+            {
+            "conditions": "Win the Kawasaki Kinen",
+            "rewards": "Energy -15, Power +20, 1 random stat +10, Skill points +45, Kawasaki Racecourse hint +1, Sunny Sign hint +1"
+            }
+        ],
+        "epithet": {
+            "name": "Sand Falcon",
+            "condition": "Without losing any races inbetween, win at least 9 dirt graded races as a Front Runner, including the JBC Classic, Teio Sho, and Tokyo Daishoten"
+        }
+    },
+    {   "id": "104602 - Smart Falcon Grand Live",
+        "character_name": "Smart Falcon",
+        "type": "Grand Live",
+        "costume": "Twilight Triumph",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "20%",
+            "stamina": "",
+            "power": "",
+            "guts": "10%",
+            "wit": ""
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "E",
+            "Dirt": "A"
+            },
+            {
+            "Sprint": "B",
+            "Mile": "A",
+            "Medium": "A",
+            "Long": "E"
+            },
+            {
+            "Front": "A",
+            "Pace": "D",
+            "Late": "G",
+            "End": "G"
+            }
+        ],
+        "unique": "α-star*",
+        "unique_explanation": "",
+        "skills": [
+            "Top Pick",
+            "Front Runner Corners",
+            "With All My Soul"
+        ],
+        "potential": [
+            "Got the Spirit!",
+            "Trending in the Charts!",
+            "Dust Cloud",
+            "Be the Center!"
+        ],
+        "event_skills": [
+            "Leader's Pride",
+            "Full Tilt",
+            "Prudent Positioning",
+            "Top Pick",
+            "Kawasaki Racecourse",
+            "Sunny Sign"
+        ],
+        "evo_skills": [
+            "Rising to Umadol Stardom!",
+            "To the Ultimate Stage!",
+            "Always Center Stage!"
+        ],
+        "aliases": ["smart falcon grand live", "twilight triumph", "banana falco"],
+        "url": "https://gametora.com/umamusume/characters/104602-smart-falcon",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1046_104602.png",
+        "review": "",
+        "secrets": [
+            {
+            "conditions": "Random event",
+            "rewards": "Get Fan Promise (Hokkaido/Hokuto/Nakayama/Kansai/Kokura/Kawasaki) status"
             },
             {
             "conditions": "Finish the Fan Promise by winning a race in that region",
@@ -5495,6 +5674,10 @@
             "Standing By",
             "Early Start"
         ],
+        "evo_skills": [
+            "Cutting-Edge Senses",
+            "Heart of a Hunter"
+        ],
         "races": [
             "hopeful stakes december 1 year 1",
             "satsuki sho april 1 year 2",
@@ -5508,6 +5691,82 @@
         "aliases": ["narita taishin original", "nevertheless"],
         "url": "https://gametora.com/umamusume/characters/105001-narita-taishin",
         "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1050_105001.png",
+        "review": "",
+        "secrets": [
+            {
+            "conditions": "Win the Asahi Hai Futurity Stakes, Satsuki Sho, Tokyo Yushun (Japanese Derby), Kikuka Sho, Japan Cup (Year 2), Arima Kinen (Year 2), Tenno Sho (Spring), Takarazuka Kinen (Year 3), Tenno Sho (Autumn Year 3) and Arima Kinen (Year 3)",
+            "rewards": "7+ \nPower +30, Skill points +15, Early Start hint +2 \n\n4-6 \nPower +25 \n\n0-3 \nPower +10"
+            },
+            {
+            "conditions": "Win the Nikkei Sho",
+            "rewards": "Practice Poor was healed\nMood +4, All stats +20, Skill points +70, Get Practice Perfect ◎ status\n\nPractice Poor was not healed\nMood +4, All stats +15, Skill points +70, Heal Practice Poor"
+            }
+        ],
+        "epithet": {
+            "name": "Comeback Champion",
+            "condition": "Win the Satsuki Sho as a End Closer, overtaking at least 4 people in the last straight\nWin the Tenno Sho (Spring) as a End Closer\nReach 1200 or more Guts"
+        }
+    },
+    {   "id": "105002 - Narita Taishin Steampunk",
+        "character_name": "Narita Taishin",
+        "type": "Steampunk",
+        "costume": "Difference Engineer",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "",
+            "stamina": "8%",
+            "power": "",
+            "guts": "8%",
+            "wit": "14"
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "G"
+            },
+            {
+            "Sprint": "F",
+            "Mile": "D",
+            "Medium": "A",
+            "Long": "A"
+            },
+            {
+            "Front": "G",
+            "Pace": "F",
+            "Late": "B",
+            "End": "A"
+            }
+        ],
+        "unique": "Hephaestus",
+        "unique_explanation": "",
+        "skills": [
+            "Nimble Navigator",
+            "Breakin' Out",
+            "Take the Chance"
+        ],
+        "potential": [
+            "End Closer Savvy",
+            "Breakin' Ahead",
+            "End Closer Straightaways",
+            "From the Brink"
+        ],
+        "event_skills": [
+            "Standing By",
+            "Long Corners",
+            "Pressure",
+            "Medium Corners",
+            "Eager",
+            "Early Start"
+        ],
+        "evo_skills": [
+            "I'll Show You!",
+            "Bolt from the Brink"
+        ],
+        "aliases": ["narita taishin steampunk", "difference engineer"],
+        "url": "https://gametora.com/umamusume/characters/105002-narita-taishin",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1050_105002.png",
         "review": "",
         "secrets": [
             {
