@@ -14330,7 +14330,7 @@
                 "conditions": [
                     "2nd to 4th (CM), 2nd to 5th (TT)",
                     "≤5m behind 1st place", 
-                    "At the last 400m of the race"
+                    "At the last 200m of the race"
                 ]
             },
             {
@@ -14338,7 +14338,7 @@
                 "inherited": "Increases target speed by 0.15 for 3.0s.",
                 "conditions": [
                     "2nd to 4th (CM), 2nd to 5th (TT)",
-                    "At the last 400m of the race"
+                    "At the last 200m of the race"
                 ]
             }
         ],
@@ -14853,6 +14853,75 @@
                     "remaining_start": 201,
                     "remaining_end": 199,
                     "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "THE MOE AAAA Thanks for My Life", "description": "Simp hard and increase velocity when positioned midpack or further back on a mid-race corner and there are at least 3 beautiful radiant Umamusume nearby.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.35 for 5.0s.",
+                "inherited": "Increases target speed by 0.15 for 3.0s.",
+                "conditions": [
+                    "4th to 9th (CM), 5th to 12th (TT)",
+                    "≥3 uma within 3m or 3 lanes",
+                    "Any corner",
+                    "Mid race"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "the moe aaaa thanks for my life",
+            "agnes digital halloween"
+        ],
+        "horse": "Agnes Digital (Halloween)",
+        "gametora_id": "110191",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "target": "layout",
+                    "match": "corner",
+                    "phase": "mid",
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Spooky, Scary, Happy", "description": "Increase velocity and very slightly intimidate up to 2 runners ahead and up to 2 runners behind when positioned toward the front upon entering the final straight.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.35 for 5.0s. Reduces speed by 0.05 to 2 runners ahead and behind.",
+                "inherited": "Increases target speed by 0.15 for 3.0s. Reduces speed by 0.025 to 2 runners ahead and behind.",
+                "conditions": [
+                    "1st to 4th (CM), 1st to 5th (TT)",
+                    "Just entered final straight"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "spooky scary happy",
+            "meisho doto halloween"
+        ],
+        "horse": "Meisho Doto (Halloween)",
+        "gametora_id": "110581",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "line",
+                    "target": "layout",
+                    "match": "straight",
+                    "select": "last"
                 }
             ]
         }
@@ -15809,7 +15878,7 @@
         "aliases": [
             "leap forward"
         ],
-        "upgrade": "Flash Forward (TO BE RENAMED)",
+        "upgrade": "Lightning Surge",
         "gametora_id": "202402",
         "activation_map": {
             "show_chart": true,
@@ -16836,7 +16905,7 @@
             }
         }
     },
-    {   "skill_name": "Flash Forward (TO BE RENAMED)", "description": "Increase acceleration when trying to pass another runner from the back late-race. (Sprint/Mile)",
+    {   "skill_name": "Lightning Surge", "description": "Increase acceleration when trying to pass another runner from the back late-race. (Sprint/Mile)",
         "effect": [
             {
                 "description": "Increases acceleration by 0.4 for 2.0s.",
@@ -16853,7 +16922,7 @@
         "rarity": "rare",
         "category": "goldenaccel",
         "aliases": [
-            "flash forward"
+            "lightning surge"
         ],
         "downgrade": "Leap Forward",
         "evolutions": [
@@ -17558,6 +17627,7 @@
         "effect": [
             {
                 "description": "Increases acceleration by 0.1 for 2.0s. Increase acceleration by 0.1 and 2.0s for every runner passed (up to 3 times).",
+                "inherited": "Increases acceleration by 0.05 for 1.2s. Increase acceleration by 0.05 and 1.0s for every runner passed (up to 3 times).",
                 "conditions": [
                     "5th to 9th (CM), 6th to 12th (TT)",
                     "≤1 length(s) behind",
@@ -17571,8 +17641,10 @@
         "rarity": "unique",
         "category": "rainbowaccel",
         "aliases": [
-            "red hot discipline"
+            "red hot discipline",
+            "bamboo memory original"
         ],
+        "horse": "Bamboo Memory (Original)",
         "gametora_id": "100531",
         "activation_map": {
             "show_chart": true,
