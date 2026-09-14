@@ -4386,6 +4386,7 @@
         "aliases": [
             "go home specialist",
             "after school specialist",
+            "afterschool stroll",
             "下校後のスペシャリスト"
         ],
         "downgrade": "After-School Stroll",
@@ -6853,10 +6854,10 @@
             "show_chart": true,
             "triggers": [
                 {
-                    "type": "box",
-                    "target": "layout",
-                    "phase": "second_half",
-                    "trigger_behavior": "random"
+                  "type": "box",
+                  "phase": "mid",
+                  "clip_within_segment_start_ratio": 0.5,
+                  "trigger_behavior": "random"
                 }
             ],
             "requirements": {
@@ -9226,10 +9227,10 @@
             "show_chart": true,
             "triggers": [
                 {
-                    "type": "box",
-                    "target": "layout",
-                    "phase": "second_half",
-                    "trigger_behavior": "random"
+                  "type": "box",
+                  "phase": "mid",
+                  "clip_within_segment_start_ratio": 0.5,
+                  "trigger_behavior": "random"
                 }
             ],
             "requirements": {
@@ -14446,7 +14447,7 @@
             ]
         }
     },
-    {   "skill_name": "Dreams Donned with Pride!", "description": "If the user activates another skill on the final corner late-race, take the crowd's cheers to heart and moderately increase velocity. If racing at Nakayama Racecourse, greatly increase velocity instead.",
+    {   "skill_name": "Dreams Donned with Pride!", "description": "If the user activates atamamonother skill on the final corner late-race, take the crowd's cheers to heart and moderately increase velocity. If racing at Nakayama Racecourse, greatly increase velocity instead.",
         "effect": [
             {
                 "description": "Increases target speed by 0.45 for 5.0s.",
@@ -14480,7 +14481,7 @@
             "special week commander", "commander special week"
         ],
         "horse": "Special Week (Commander)",
-        "gametora_id": "100361",
+        "gametora_id": "120011",
         "activation_map": {
             "show_chart": true,
             "triggers": [
@@ -14639,7 +14640,7 @@
                 "conditions": [
                     "Random point in the second half of mid race"
                 ],
-                "scale":"0 to 2 green skills, 0\n3 to 4 green skills, 0.05 target speed and 0.05 acceleration\n5 green skills, 0.10 target speed and 0.1 acceleration\n6+ green skills, 0.15 target speed and +0.15 acceleration"
+                "scale":"0 to 2 green skills, 0\n3 to 4 green skills, 0.05 target speed and 0.05 acceleration\n5 green skills, 0.10 target speed and 0.1 acceleration\n6+ green skills, 0.15 target speed and 0.15 acceleration"
             }
         ],
         "preconditions": [],
@@ -14771,8 +14772,9 @@
                     "type": "box",
                     "phase": "late_and_beyond",
                     "target": "layout",
-                    "match": "not_a_corner",
+                    "match": "corner",
                     "select": "last",
+                    "clip_within_segment_start_ratio": 0.5,
                     "trigger_behavior": "asap"
                 }
             ]
@@ -14921,7 +14923,120 @@
                     "type": "line",
                     "target": "layout",
                     "match": "straight",
-                    "select": "last"
+                    "select": "last",
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Silent Letter", "description": "Increase ability to break out of the pack with a strong desire to linger in fans' hearts when pressured toward the front with 400m or less remaining.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.25 and acceleration by 0.3 for 5.0s.",
+                "inherited": "Increases target speed by 0.05 and acceleration by 0.1 for 5.0s.",
+                "conditions": [
+                    "1st to 2nd",
+                    "Be an overtake target for ≥1s",
+                    "≤400m of the race remaining"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "silent letter",
+            "aston machan original"
+        ],
+        "horse": "Aston Machan (Original)",
+        "gametora_id": "100871",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "distance_mode": "remaining",
+                    "remaining_start": 400,
+                    "remaining_end": 0,
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Lightning Flare", "description": "Moderately increase velocity continuously when the skill user activates 2 skills mid-race. Increase this skill's effectiveness if the user activates another skill while it's active (up to 2 times).",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.25 for 6.0s. Increases by an additional 0.025 each time a skill is activated, up to 2 times.",
+                "inherited": "Increases target speed by 0.05 for 3.6s. Increases by an additional 0.025 each time a skill is activated, up to 2 times.",
+                "conditions": [
+                    "Activated ≥2 skills during the mid race"
+                ]
+            }
+        ],
+        "preconditions": [],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "lightning flare",
+            "tamamo cross festival"
+        ],
+        "horse": "Tamamo Cross (Festival)",
+        "gametora_id": "110211",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "phase": "mid",
+                    "trigger_behavior": "asap"
+                }
+            ]
+        }
+    },
+    {   "skill_name": "Firelight", "description": "Increase velocity on the final straight after pressuring a runner toward the back on a corner late-race. Effect increases for each time the user passed a runner on a corner late-race.",
+        "effect": [
+            {
+                "description": "Increases target speed by 0.35 for 5.0s. Effects scale based on overtakes.",
+                "inherited": "Increases target speed by 0.15 for 3.0s. Effects scale based on overtakes.",
+                "conditions": [
+                    "Just entered final straight"
+                ],
+                "scale": "Overtakes < 2, 0.35/0.15\nOvertakes = 2, 0.385/0.165\nOvertakes = 3, 0.42/0.18\n4 <= Overtakes, 0.438/0.188"
+            }
+        ],
+        "preconditions": [
+            "5th to 9th (CM), 7th to 12th (TT)",
+            "Overtake target exists",
+            "Any corner",
+            "Late race and beyond"
+        ],
+        "review": "",
+        "rarity": "unique",
+        "category": "rainbowvelocity",
+        "aliases": [
+            "firelight",
+            "inari one festival"
+        ],
+        "horse": "Inari One (Festival)",
+        "gametora_id": "110341",
+        "activation_map": {
+            "show_chart": true,
+            "triggers": [
+                {
+                    "type": "box",
+                    "phase": "late_and_beyond",
+                    "target": "layout",
+                    "match": "corner",
+                    "trigger_behavior": "precondition"
+                },
+                {
+                    "type": "line",
+                    "target": "layout",
+                    "match": "straight",
+                    "select": "last",
+                    "trigger_behavior": "asap"
                 }
             ]
         }
@@ -17351,6 +17466,7 @@
         "aliases": [
             "lets pump some iron",
             "pump iron",
+            "lpsi",
             "mejiro ryan",
             "lets anabolic",
             "レッツアナボリック"

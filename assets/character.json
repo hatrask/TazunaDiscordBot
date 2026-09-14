@@ -973,7 +973,7 @@
             "condition": "Win at least 6 G1 races, including the Satsuki Sho, Kikuka Sho, and Takarazuka Kinen\nEarn a total of at least 480,000 fans"
         }
     },
-    {   "id": "100701 - Gold Ship Summer",
+    {   "id": "100702 - Gold Ship Summer",
         "character_name": "Gold Ship",
         "type": "Summer",
         "costume": "RUN! RUIN! LAUNCHER!",
@@ -2584,8 +2584,8 @@
             "Back for More Moe!"
         ],
         "aliases": ["agnes digital halloween", "fanatic jiangshi", "digitan"],
-        "url": "https://gametora.com/umamusume/characters/101901-agnes-digital",
-        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1019_101901.png",
+        "url": "https://gametora.com/umamusume/characters/101902-agnes-digital",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1019_101902.png",
         "review": "",
         "secrets": [
             {
@@ -2812,6 +2812,11 @@
             "Nakayama Racecourse",
             "Up-Tempo"
         ],
+        "evo_skills": [
+            "Gone in a Flash",
+            "Let's Get Cracking!",
+            "Paradise Tail"
+        ],
         "races": [
             "hanshin daishoten march 2 year 3",
             "tenno sho spring april 2 year 3",
@@ -2822,6 +2827,89 @@
         "aliases": ["tamamo cross original", "fast as lightning"],
         "url": "https://gametora.com/umamusume/characters/102101-tamamo-cross",
         "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1021_102101.png",
+        "review": "",
+        "secrets": [
+            {
+            "conditions": "Win the senior Autumn Triple Crown (Tenno Sho (Autumn Year 3), Japan Cup (Year 3), Arima Kinen (Year 3)) and the Takarazuka Kinen (Year 3)",
+            "rewards": "Speed +25, Guts +15, Tail Held High hint +2"
+            },
+            {
+            "conditions": "Win the Kyoto Kimpai",
+            "rewards": "Energy -15, 1 random stat +8, Skill points +35, Fans +500, Kyoto Racecourse hint +1, Updrafters hint +1"
+            },
+            {
+                "conditions": "Win the Nakayama Kimpai",
+                "rewards": "Energy -15, 1 random stat +8, Skill points +35, Fans +500, Nakayama Racecourse hint +1, Up-Tempo hint +1"
+            }
+        ],
+        "epithet": {
+            "name": "Now That's White Lightning!",
+            "condition": "Win at least 8 graded races, including the Tenno Sho (Spring), Takarazuka Kinen (Year 3), Tenno Sho (Autumn Year 3)\nEarn a total of at least 240,000 fans"
+        }
+    },
+    {   "id": "102102 - Tamamo Cross Festival",
+        "character_name": "Tamamo Cross",
+        "type": "Festival",
+        "costume": "Raging Thunder",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "14%",
+            "stamina": "8%",
+            "power": "",
+            "guts": "8%",
+            "wit": ""
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "F"
+            },
+            {
+            "Sprint": "G",
+            "Mile": "E",
+            "Medium": "A",
+            "Long": "A"
+            },
+            {
+            "Front": "G",
+            "Pace": "A",
+            "Late": "A",
+            "End": "A"
+            }
+        ],
+        "unique": "Lightning Flare",
+        "unique_explanation": "",
+        "skills": [
+            "Ramp Up",
+            "Up-Tempo",
+            "Head-On"
+        ],
+        "potential": [
+            "Wet Conditions",
+            "Killer Tunes",
+            "Tail Held High",
+            "It's On!"
+        ],
+        "event_skills": [
+            "Hanshin Racecourse",
+            "Fall Runner",
+            "Straight Descent",
+            "Tail Held High",
+            "Kyoto Racecourse",
+            "Updrafters",
+            "Nakayama Racecourse",
+            "Up-Tempo"
+        ],
+        "evo_skills": [
+            "A Prayer for Our Predecessors",
+            "C'mon, Let's Do This!",
+            "'kay then, let's get movin'!"
+        ],
+        "aliases": ["tamamo cross festival", "raging thunder"],
+        "url": "https://gametora.com/umamusume/characters/102102-tamamo-cross",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1021_102102.png",
         "review": "",
         "secrets": [
             {
@@ -3506,7 +3594,7 @@
             "condition": "Win the Asahi Hai Futurity Stakes, Satsuki Sho, and Tokyo Yushun (Japanese Derby) while being undefeated and the most popular as a Front Runner\nReach 1200 or more Stamina"
         }
     },
-    {   "id": "102601 - Mihono Bourbon Valentines",
+    {   "id": "102602 - Mihono Bourbon Valentines",
         "character_name": "Mihono Bourbon",
         "type": "Valentines",
         "costume": "CODE: ICING",
@@ -4266,6 +4354,77 @@
             "condition": "Win 4 G1 races on both turf and dirt terrain, including winning the Tokyo Daishoten, Takarazuka Kinen (Year 3) as a Pace Chaser and winning the Tenno Sho (Spring), Arima Kinen as a Late Surger or End Closer"
         }
     },
+    {   "id": "103402 - Inari One Festival",
+        "character_name": "Inari One",
+        "type": "Festival",
+        "costume": "Golden Dream",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "14%",
+            "stamina": "",
+            "power": "8%",
+            "guts": "",
+            "wit": "8%"
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "A"
+            },
+            {
+            "Sprint": "F",
+            "Mile": "B",
+            "Medium": "A",
+            "Long": "A"
+            },
+            {
+            "Front": "G",
+            "Pace": "B",
+            "Late": "B",
+            "End": "A"
+            }
+        ],
+        "unique": "Firelight",
+        "unique_explanation": "",
+        "skills": [
+            "Oi Racecourse",
+            "Inside Scoop",
+            "Straightaway Spurt"
+        ],
+        "potential": [
+            "I Can See Right Through You",
+            "Innate Experience",
+            "Rapid Gain",
+            "Encroaching Shadow"
+        ],
+        "event_skills": [
+            "Ramp Up",
+            "Forward, March!",
+            "Tail Held High",
+            "Fall Runner",
+            "After-School Stroll",
+            "Eager",
+            "All I've Got",
+            "Fighting Spirit"
+        ],
+        "evo_skills": [
+            "Standout Step",
+            "Fleet Foot of Idaten"
+        ],
+        "aliases": ["inari one festival", "edomurasaki"],
+        "url": "https://gametora.com/umamusume/characters/103402-inari-one",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1034_103402.png",
+        "review": "",
+        "secrets": [
+            
+        ],
+        "epithet": {
+            "name": "Warlord from Oi",
+            "condition": "Win 4 G1 races on both turf and dirt terrain, including winning the Tokyo Daishoten, Takarazuka Kinen (Year 3) as a Pace Chaser and winning the Tenno Sho (Spring), Arima Kinen as a Late Surger or End Closer"
+        }
+    },
 
     {   "id": "103501 - Winning Ticket",
         "character_name": "Winning Ticket",
@@ -4772,7 +4931,7 @@
             "condition": "Win at least 9 races with a length of of 1200m, including the Sprinters Stakes and Takamatsunomiya Kinen\nEarn a total of at least 240,000 fans"
         }
     },
-    {   "id": "103801 - Curren Chan Wedding",
+    {   "id": "103802 - Curren Chan Wedding",
         "character_name": "Curren Chan",
         "type": "Wedding",
         "costume": "Ma Chérie of the New Moon",
@@ -4986,7 +5145,7 @@
             "condition": "Win the Hanshin Juvenile Fillies\nBe at a Mood level of Perfect and don't have either the Slow Metabolism, Skin Outbreak or Slacker condition for all races\nRaise the level of all trainings to at least 3\nComplete the Career"
         }
     },
-    {   "id": "104001 - Gold City Festival",
+    {   "id": "104002 - Gold City Festival",
         "character_name": "Gold City",
         "type": "Festival",
         "costume": "Autumn Cosmos",
@@ -5712,6 +5871,79 @@
         "epithet": {
             "name": "L Hater",
             "condition": "Win the Japan Cup\nWin the Tenno Sho (Spring)\nWin the Tenno Sho (Autumn) with a Mood level of Perfect twice\nWin against Gold Ship at least 3 times"
+        }
+    },
+
+    {   "id": "104901 - Nakayama Festa",
+        "character_name": "Nakayama Festa",
+        "type": "Original",
+        "costume": "Desperate Measures",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "10%",
+            "stamina": "10%",
+            "power": "10%",
+            "guts": "",
+            "wit": ""
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "G"
+            },
+            {
+            "Sprint": "G",
+            "Mile": "C",
+            "Medium": "A",
+            "Long": "B"
+            },
+            {
+            "Front": "G",
+            "Pace": "A",
+            "Late": "A",
+            "End": "D"
+            }
+        ],
+        "unique": "Laugh at the Odds",
+        "unique_explanation": "",
+        "skills": [
+            "Risk-Taker",
+            "Risky Business",
+            "All I've Got"
+        ],
+        "potential": [
+            "Late Surger Straightaways",
+            "Nothing Ventured",
+            "Medium Straightaways",
+            "Risk-Maker"
+        ],
+        "event_skills": [
+            "Long Shot"
+        ],
+        "evo_skills": [
+            "It's All or Nothing",
+            "Takin' Each Gamble"
+        ],
+        "races": [
+            "keisei hai january 1 year 2",
+            "satsuki sho april 1 year 2",
+            "japanese derby may 2 year 2",
+            "kikuka sho october 2 year 2",
+            "chunichi shimbun hai december 1 year 2",
+            "takarazuka kinen june 2 year 3",
+            "japan cup november 2 year 3"
+        ],
+        "aliases": ["nakayama festa original", "desperate measures"],
+        "url": "hhttps://gametora.com/umamusume/characters/104901-nakayama-festa",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1049_104901.png",
+        "review": "",
+        "secrets": [
+        ],
+        "epithet": {
+            "name": "Thoroughbred Gambler",
+            "condition": "Win both the Takarazuka Kinen and the Japan Cup (Senior)\nSucceed a training that has a failure rate of at least 30%\nNever fail a training during the entire run\nComplete the Career"
         }
     },
 
@@ -6577,7 +6809,7 @@
             "condition": "Win the Hanshin Juvenile Fillies as a Late Surger while being most popular\nWin the Oka Sho as a Late Surger while being most popular\nWin the Japanese Oaks as a Late Surger while being most popular\nWin the Shuka Sho as a Late Surger while being most popular\nWin the Queen Elizabeth II Cup twicen\nEarn a total of at least 240,000 fans"
         }
     },
-    {   "id": "105901 - Mejiro Dober Camping",
+    {   "id": "105902 - Mejiro Dober Camping",
         "character_name": "Mejiro Dober",
         "type": "Camping",
         "costume": "Sapphire Sojourn",
@@ -7661,6 +7893,178 @@
         "epithet": {
             "name": "Stress-Free Stayer",
             "condition": "Inherit memories from parents carrying the Mejiro name\nWin at least 4 G2 or G1 races with a length of 3000m or more, one of them being the Tenno Sho (Spring)\nEarn a total of at least 240,000 fans"
+        }
+    },
+
+    {   "id": "107801 - Yamanin Zephyr",
+        "character_name": "Yamanin Zephyr",
+        "type": "Original",
+        "costume": "Fluttertail Spirit",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "10%",
+            "stamina": "",
+            "power": "",
+            "guts": "10%",
+            "wit": "10%"
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "D"
+            },
+            {
+            "Sprint": "B",
+            "Mile": "A",
+            "Medium": "A",
+            "Long": "G"
+            },
+            {
+            "Front": "E",
+            "Pace": "A",
+            "Late": "C",
+            "End": "G"
+            }
+        ],
+        "unique": "Sunny Breeze",
+        "unique_explanation": "",
+        "skills": [
+            "Long Shot",
+            "Shifting Gears",
+            "Aspire"
+        ],
+        "potential": [
+            "Mile Corners",
+            "Changing Gears",
+            "Corner Acceleration",
+            "Ambitious Breeze"
+        ],
+        "event_skills": [
+            "Unyielding Spirit",
+            "Spring Runner",
+            "Summer Runner",
+            "Fall Runner",
+            "Winter Runner"
+        ],
+        "evo_skills": [
+            "Shearing Gust",
+            "As Nature Wills",
+            "Heavenly Wind"
+        ],
+        "races": [
+            "new zealand trophy mile 1 year 2",
+            "aoi stakes may 2 year 2",
+            "sprinters stakes september 2 year 2",
+            "mile championship november 2 year 2",
+            "yasuda kinen june 1 year 3",
+            "sprinters stakes september 2 year 3",
+            "tenno sho autumn october 2 year 3"
+        ],
+        "aliases": ["yamanin zephyr original", "fluttertail spirit"],
+        "url": "https://gametora.com/umamusume/characters/107801-yamanin-zephyr",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1078_107801.png",
+        "review": "",
+        "secrets": [
+        ],
+        "epithet": {
+            "name": "Wind Incarnate",
+            "condition": "Win the Yasuda Kinen twice\nWin the Sprinters Stakes\nWin the Takarazuka Kinen (Senior)\nReach 1200 or more Speed"
+        }
+    },
+
+    {   "id": "108701 - Aston Machan",
+        "character_name": "Aston Machan",
+        "type": "Original",
+        "costume": "Flare",
+        "rarity": "⭐⭐⭐",
+        "stat_bonuses": [
+            {
+            "speed": "20%",
+            "stamina": "",
+            "power": "",
+            "guts": "10%",
+            "wit": ""
+            }
+        ],
+        "aptitudes": [
+            {
+            "Turf": "A",
+            "Dirt": "G"
+            },
+            {
+            "Sprint": "A",
+            "Mile": "B",
+            "Medium": "G",
+            "Long": "G"
+            },
+            {
+            "Front": "A",
+            "Pace": "A",
+            "Late": "G",
+            "End": "G"
+            }
+        ],
+        "unique": "Silent Letter",
+        "unique_explanation": "",
+        "skills": [
+            "Wet Conditions",
+            "Light as a Feather",
+            "Early Lead"
+        ],
+        "potential": [
+            "Sprint Corners",
+            "Taking the Lead",
+            "Groundwork",
+            "In High Spirits"
+        ],
+        "event_skills": [
+            "Light as a Feather",
+            "Front Runner Savvy",
+            "Shifting Gears",
+            "Productive Plan",
+            "Rosy Outlook",
+            "Up-Tempo"
+        ],
+        "evo_skills": [
+            "Raise the Pitch",
+            "Leave a Footprint in Your Memory"
+        ],
+        "races": [
+            "fantasy stakes november 1 year 1",
+            "hanshin juvenile fillies december 1 year 1",
+            "fillies' revue march 1 year 2",
+            "oka sho april 1 year 2",
+            "sprinters stakes september 2 year 2",
+            "takamatsunomiya kinen march 2 year 3",
+            "sprinters stakes september 2 year 3"
+        ],
+        "aliases": ["aston machan original", "flare"],
+        "url": "https://gametora.com/umamusume/characters/108701-aston-machan",
+        "thumbnail": "https://gametora.com/images/umamusume/characters/chara_stand_1087_108701.png",
+        "review": "",
+        "secrets": [
+            {
+            "conditions": "Win against Vodka in races at least 4 times",
+            "rewards": "Speed +20, Guts +20, Skill points +30, Shifting Gears hint +2"
+            },
+            {
+            "conditions": "Win against Daiwa Scarlet in races at least 3 times",
+            "rewards": "Power +20, Wit +20, Skill points +30, Productive Plan hint +2"
+            },
+            {
+            "conditions": "Win the Shuka Sho",
+            "rewards": "Rosy Outlook hint +2"
+            },
+            {
+            "conditions": "Win the Tenno Sho (Autumn Year 3)",
+            "rewards": "Up-Tempo hint +2"
+            }
+        ],
+        "epithet": {
+            "name": "Undying Machan",
+            "condition": "Win the Sprinters Stakes\nWin at least twice against both Daiwa Scarlet and Vodka\nEarn a total of at least 320,000 fans and complete the Career having cleared all objectives"
         }
     },
 
